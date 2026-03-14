@@ -19,6 +19,7 @@ export default function ArticlesPage() {
   const { data: articles, isLoading } = useCollection(articlesQuery);
 
   // Mock articles for initial presentation if database is empty
+  // Use static date strings to prevent hydration mismatch errors
   const mockArticles = [
     {
       id: 'art-1',
@@ -26,7 +27,7 @@ export default function ArticlesPage() {
       excerpt: 'Recovery is just as important as the run itself. Learn the best strategies to bounce back after your big race...',
       category: 'Training',
       authorName: 'Sarah Jenkins',
-      publishedAt: new Date().toISOString(),
+      publishedAt: '2024-05-20T10:00:00.000Z',
       imageUrl: 'https://picsum.photos/seed/train/600/400'
     },
     {
@@ -35,7 +36,7 @@ export default function ArticlesPage() {
       excerpt: 'Fueling your body correctly can be the difference between a podium finish and a DNF. We break down the macros...',
       category: 'Nutrition',
       authorName: 'Dr. Mike Ross',
-      publishedAt: new Date(Date.now() - 86400000).toISOString(),
+      publishedAt: '2024-05-19T10:00:00.000Z',
       imageUrl: 'https://picsum.photos/seed/nutri/600/400'
     },
     {
@@ -44,7 +45,7 @@ export default function ArticlesPage() {
       excerpt: 'Sports are 90% mental. Discover how elite athletes prepare their minds for high-pressure competition situations...',
       category: 'Mindset',
       authorName: 'Coach Carter',
-      publishedAt: new Date(Date.now() - 172800000).toISOString(),
+      publishedAt: '2024-05-18T10:00:00.000Z',
       imageUrl: 'https://picsum.photos/seed/mind/600/400'
     }
   ];

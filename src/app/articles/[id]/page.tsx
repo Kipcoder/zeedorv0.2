@@ -26,13 +26,14 @@ export default function ArticleDetailPage() {
   const { data: article, isLoading } = useDoc(docRef);
 
   // Mock data for initial presentation if not in DB
+  // Use static date strings to prevent hydration mismatch errors
   const mockArticles: Record<string, any> = {
     'art-1': {
       title: 'Top 10 Recovery Tips for Marathon Runners',
       content: 'Recovery is the often-overlooked secret weapon of elite runners. After a grueling 26.2 miles, your body is in a state of high stress. Inflammation is peaking, glycogen stores are depleted, and micro-tears in muscle fiber need urgent repair.\n\nFirst, prioritize hydration with electrolytes. Water alone is not enough to replace what you lost. Second, focus on high-quality protein within the first 60 minutes to kickstart muscle repair. Third, dont underestimate the power of sleep—this is when your growth hormones peak.\n\nLastly, gentle movement like walking or swimming in the days following the race can actually speed up recovery by increasing blood flow without the impact of running.',
       category: 'Training',
       authorName: 'Sarah Jenkins',
-      publishedAt: new Date().toISOString(),
+      publishedAt: '2024-05-20T10:00:00.000Z',
       imageUrl: 'https://picsum.photos/seed/train/1200/600'
     },
     'art-2': {
@@ -40,7 +41,7 @@ export default function ArticleDetailPage() {
       content: 'Nutrition is more than just counting calories. For athletes, it is about timing and quality. Complex carbohydrates provide the sustained energy needed for long sessions, while fats are essential for hormone production and long-term energy stores.\n\nPre-workout meals should be easily digestible and rich in carbs. During exercise longer than 90 minutes, supplemental glucose can prevent "bonking." Post-workout, a 3:1 ratio of carbs to protein is ideal for restoring energy and repairing tissue.',
       category: 'Nutrition',
       authorName: 'Dr. Mike Ross',
-      publishedAt: new Date(Date.now() - 86400000).toISOString(),
+      publishedAt: '2024-05-19T10:00:00.000Z',
       imageUrl: 'https://picsum.photos/seed/nutri/1200/600'
     }
   };

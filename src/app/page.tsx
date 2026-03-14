@@ -1,4 +1,6 @@
 
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -107,7 +109,7 @@ const latestArticles = [
     excerpt: 'Recovery is just as important as the run itself. Learn the best strategies to bounce back after your big race...',
     category: 'Training',
     author: 'Sarah Jenkins',
-    date: new Date().toISOString(),
+    date: '2024-05-20T10:00:00.000Z',
     image: 'https://picsum.photos/seed/train/600/400'
   },
   {
@@ -116,7 +118,7 @@ const latestArticles = [
     excerpt: 'Fueling your body correctly can be the difference between a podium finish and a DNF. We break down the macros...',
     category: 'Nutrition',
     author: 'Dr. Mike Ross',
-    date: new Date(Date.now() - 86400000).toISOString(),
+    date: '2024-05-19T10:00:00.000Z',
     image: 'https://picsum.photos/seed/nutri/600/400'
   },
   {
@@ -125,7 +127,7 @@ const latestArticles = [
     excerpt: 'Sports are 90% mental. Discover how elite athletes prepare their minds for high-pressure competition situations...',
     category: 'Mindset',
     author: 'Coach Carter',
-    date: new Date(Date.now() - 172800000).toISOString(),
+    date: '2024-05-18T10:00:00.000Z',
     image: 'https://picsum.photos/seed/mind/600/400'
   }
 ];
