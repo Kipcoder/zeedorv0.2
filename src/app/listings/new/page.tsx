@@ -27,8 +27,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { generateListingDescription } from '@/ai/flows/listing-description-assistant-flow';
 
 const categories = [
@@ -122,33 +122,46 @@ export default function NewListingPage() {
     setLoading(true);
 
     try {
-      const listingsRef = collection(firestore, 'listings');
+      // Choose collection based on status
+      const collectionPath = status === 'active' 
+        ? 'listings' 
+        : `userProfiles/${user.uid}/providerListings`;
+      
+      const listingsRef = collection(firestore, collectionPath);
+      const newDocRef = doc(listingsRef);
+      
       const listingData = {
+        id: newDocRef.id,
         providerId: user.uid,
         title: formData.title,
         category: formData.category,
         description: formData.description,
-        price: parseFloat(formData.price),
+        price: parseFloat(formData.price) || 0,
         currency: formData.currency,
         location: formData.location,
         tags: formData.tags,
         status: status,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        imageUrls: [`https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/400`], // Placeholder
+        imageUrls: [`https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/400`],
       };
 
-      addDocumentNonBlocking(listingsRef, listingData);
+      setDocumentNonBlocking(newDocRef, listingData, { merge: true });
       
       toast({
         title: status === 'active' ? 'Listing Published!' : 'Draft Saved!',
-        description: 'Your service is now being processed.',
+        description: 'Your service is now live on your dashboard.',
       });
       
       router.push('/dashboard');
     } catch (error) {
       console.error('Submit Error:', error);
       setLoading(false);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not save listing. Please try again.',
+      });
     }
   };
 
@@ -321,7 +334,6 @@ export default function NewListingPage() {
             </div>
           </div>
 
-          {/* Sidebar / Tips */}
           <aside className="w-full md:w-80 space-y-6">
             <Card className="rounded-3xl border-none shadow-sm bg-primary text-white p-8">
               <Sparkles className="mb-4 h-8 w-8 text-blue-200" />
@@ -340,22 +352,6 @@ export default function NewListingPage() {
                   <p>Use our <b>AI Assist</b> tool to generate professional, SEO-friendly descriptions.</p>
                 </li>
               </ul>
-            </Card>
-
-            <Card className="rounded-3xl border-none shadow-sm p-8 bg-white">
-              <h3 className="font-headline font-bold mb-4">Preview Card</h3>
-              <div className="border rounded-2xl overflow-hidden grayscale opacity-50 pointer-events-none">
-                 <div className="h-32 bg-gray-100 flex items-center justify-center">
-                   <Plus size={24} className="text-gray-300" />
-                 </div>
-                 <div className="p-4 space-y-2">
-                    <div className="h-4 w-3/4 bg-gray-100 rounded"></div>
-                    <div className="h-4 w-1/2 bg-gray-100 rounded"></div>
-                 </div>
-              </div>
-              <p className="text-xs text-center text-muted-foreground mt-4 italic">
-                This is a draft preview of how your listing might appear to customers.
-              </p>
             </Card>
           </aside>
         </div>

@@ -5,15 +5,13 @@ import Navbar from '@/components/Navbar';
 import { 
   BarChart3, 
   ShoppingBag, 
-  Settings, 
-  Bell, 
   Plus, 
   Calendar as CalendarIcon, 
   MessageSquare,
-  ChevronRight,
   TrendingUp,
   User,
-  CreditCard
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,20 +21,70 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import Image from 'next/image';
-
-const stats = [
-  { label: 'Active Listings', value: '4', icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100' },
-  { label: 'Upcoming Bookings', value: '12', icon: CalendarIcon, color: 'text-green-600', bg: 'bg-green-100' },
-  { label: 'Total Earnings', value: '$2,450', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-100' },
-  { label: 'Unread Messages', value: '3', icon: MessageSquare, color: 'text-amber-600', bg: 'bg-amber-100' },
-];
-
-const myListings = [
-  { id: '1', title: 'Elite Tennis Coaching', price: '$60/hr', status: 'Active', views: 245, bookings: 12, image: 'https://picsum.photos/seed/21/600/400' },
-  { id: '2', title: 'Private Gym Rental', price: '$45/hr', status: 'Paused', views: 89, bookings: 5, image: 'https://picsum.photos/seed/65/600/400' },
-];
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 export default function DashboardPage() {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  // Query for user's active listings in the public collection
+  const activeListingsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'listings'),
+      where('providerId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user]);
+
+  // Query for user's private/draft listings
+  const privateListingsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'userProfiles', user.uid, 'providerListings'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user]);
+
+  const { data: activeListings, isLoading: loadingActive } = useCollection(activeListingsQuery);
+  const { data: privateListings, isLoading: loadingPrivate } = useCollection(privateListingsQuery);
+
+  const allListings = [...(activeListings || []), ...(privateListings || [])].sort((a, b) => {
+    const dateA = a.createdAt?.seconds || 0;
+    const dateB = b.createdAt?.seconds || 0;
+    return dateB - dateA;
+  });
+
+  const stats = [
+    { label: 'Total Listings', value: allListings.length.toString(), icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { label: 'Upcoming Bookings', value: '0', icon: CalendarIcon, color: 'text-green-600', bg: 'bg-green-100' },
+    { label: 'Total Earnings', value: '$0', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-100' },
+    { label: 'Unread Messages', value: '0', icon: MessageSquare, color: 'text-amber-600', bg: 'bg-amber-100' },
+  ];
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={48} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 text-center rounded-3xl">
+          <h2 className="text-2xl font-bold mb-4">Please Sign In</h2>
+          <p className="text-muted-foreground mb-6">You need to be logged in to view your dashboard.</p>
+          <Link href="/login">
+            <Button className="w-full h-12 rounded-xl">Sign In</Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50/50 pt-24 pb-20">
       <Navbar />
@@ -82,47 +130,73 @@ export default function DashboardPage() {
           </TabsList>
 
           <TabsContent value="listings" className="space-y-6 outline-none">
-            <div className="grid gap-6">
-              {myListings.map((listing) => (
-                <Card key={listing.id} className="border-none shadow-sm overflow-hidden rounded-3xl bg-white">
-                  <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-center">
-                    <div className="relative w-full md:w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0">
-                      <Image src={listing.image} alt={listing.title} fill className="object-cover" />
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                      <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                        <h3 className="text-xl font-headline font-bold">{listing.title}</h3>
-                        <Badge variant={listing.status === 'Active' ? 'default' : 'secondary'} className="rounded-full">
-                          {listing.status}
-                        </Badge>
+            {loadingActive || loadingPrivate ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="animate-spin text-primary" size={32} />
+              </div>
+            ) : allListings.length > 0 ? (
+              <div className="grid gap-6">
+                {allListings.map((listing) => (
+                  <Card key={listing.id} className="border-none shadow-sm overflow-hidden rounded-3xl bg-white">
+                    <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-center">
+                      <div className="relative w-full md:w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0">
+                        <Image 
+                          src={listing.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/400'} 
+                          alt={listing.title} 
+                          fill 
+                          className="object-cover" 
+                        />
                       </div>
-                      <p className="text-primary font-bold mb-4">{listing.price}</p>
-                      <div className="flex flex-wrap justify-center md:justify-start gap-6 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1"><BarChart3 size={14} /> {listing.views} Views</span>
-                        <span className="flex items-center gap-1"><CalendarIcon size={14} /> {listing.bookings} Bookings</span>
+                      <div className="flex-1 text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                          <h3 className="text-xl font-headline font-bold">{listing.title}</h3>
+                          <Badge variant={listing.status === 'active' ? 'default' : 'secondary'} className="rounded-full">
+                            {listing.status}
+                          </Badge>
+                        </div>
+                        <p className="text-primary font-bold mb-4">{listing.currency} {listing.price}</p>
+                        <div className="flex flex-wrap justify-center md:justify-start gap-6 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><BarChart3 size={14} /> 0 Views</span>
+                          <span className="flex items-center gap-1"><CalendarIcon size={14} /> 0 Bookings</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="rounded-xl">Edit</Button>
-                      <Button variant="ghost" className="rounded-xl text-destructive hover:bg-destructive/5">Delete</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      <div className="flex gap-2">
+                        {listing.status === 'active' && (
+                          <Link href={`/listings`}>
+                            <Button variant="outline" size="icon" className="rounded-xl">
+                              <ExternalLink size={18} />
+                            </Button>
+                          </Link>
+                        )}
+                        <Button variant="outline" className="rounded-xl">Edit</Button>
+                        <Button variant="ghost" className="rounded-xl text-destructive hover:bg-destructive/5">Delete</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                <p className="text-xl font-bold text-gray-400 mb-2">No listings yet</p>
+                <p className="text-muted-foreground mb-8">Ready to start your sports business?</p>
+                <Link href="/listings/new">
+                  <Button className="rounded-xl font-bold px-8">Create Your First Listing</Button>
+                </Link>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="profile" className="outline-none">
              <div className="grid md:grid-cols-3 gap-8">
                 <Card className="col-span-1 rounded-3xl border-none shadow-sm bg-white overflow-hidden">
                    <div className="h-32 bg-primary relative">
-                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white overflow-hidden bg-gray-200">
-                         <User size={40} className="m-auto mt-4 text-gray-400" />
+                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white overflow-hidden bg-gray-200 flex items-center justify-center">
+                         <User size={40} className="text-gray-400" />
                       </div>
                    </div>
                    <CardContent className="pt-16 pb-8 text-center">
-                      <h4 className="font-headline font-bold text-xl">Alex Johnson</h4>
-                      <p className="text-muted-foreground mb-6">Pro Tennis Coach</p>
+                      <h4 className="font-headline font-bold text-xl">{user?.displayName || 'Sports Provider'}</h4>
+                      <p className="text-muted-foreground mb-6">{user?.email}</p>
                       <Button variant="outline" className="w-full rounded-xl">Update Photo</Button>
                    </CardContent>
                 </Card>
@@ -132,11 +206,11 @@ export default function DashboardPage() {
                    <div className="grid gap-6">
                       <div className="grid gap-2">
                          <Label className="font-bold">Display Name</Label>
-                         <Input defaultValue="Alex Johnson" className="rounded-xl h-12" />
+                         <Input defaultValue={user?.displayName || ''} className="rounded-xl h-12" />
                       </div>
                       <div className="grid gap-2">
                          <Label className="font-bold">Email Address</Label>
-                         <Input defaultValue="alex.coach@example.com" disabled className="rounded-xl h-12" />
+                         <Input defaultValue={user?.email || ''} disabled className="rounded-xl h-12" />
                       </div>
                       <div className="grid gap-2">
                          <Label className="font-bold">Bio</Label>
