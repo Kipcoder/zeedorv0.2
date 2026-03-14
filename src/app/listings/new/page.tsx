@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef } from 'react';
@@ -11,7 +12,7 @@ import {
   Info,
   CheckCircle2,
   Upload,
-  Image as ImageIcon
+  Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,11 @@ const categories = [
   'Nutritionists', 'Sports Transport', 'Accommodation', 'Repairs'
 ];
 
+const sports = [
+  'Football', 'Basketball', 'Tennis', 'Swimming', 'Yoga', 'Cricket', 
+  'Golf', 'Volleyball', 'Running', 'Cycling', 'Martial Arts', 'Boxing'
+];
+
 export default function NewListingPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -53,6 +59,7 @@ export default function NewListingPage() {
   const [formData, setFormData] = useState({
     title: '',
     category: '',
+    sport: '',
     description: '',
     price: '',
     currency: 'USD',
@@ -77,7 +84,7 @@ export default function NewListingPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB limit
+      if (file.size > 1024 * 1024) {
         toast({
           variant: 'destructive',
           title: 'File too large',
@@ -94,11 +101,11 @@ export default function NewListingPage() {
   };
 
   const handleAiEnhance = async () => {
-    if (!formData.title || !formData.category) {
+    if (!formData.title || !formData.category || !formData.sport) {
       toast({
         variant: 'destructive',
         title: 'Missing information',
-        description: 'Please provide a title and category first so the AI knows what to write about.',
+        description: 'Please provide a title, sport, and category first.',
       });
       return;
     }
@@ -107,7 +114,7 @@ export default function NewListingPage() {
     try {
       const result = await generateListingDescription({
         title: formData.title,
-        category: formData.category,
+        category: `${formData.sport} ${formData.category}`,
         keyFeatures: formData.tags.join(', ') || 'Professional sports service',
         targetAudience: 'Athletes and sports enthusiasts',
         existingDescription: formData.description,
@@ -124,7 +131,7 @@ export default function NewListingPage() {
       toast({
         variant: 'destructive',
         title: 'AI Enhancement Failed',
-        description: 'We couldn\'t generate a description right now. Please try again.',
+        description: 'We couldn\'t generate a description right now.',
       });
     } finally {
       setAiEnhancing(false);
@@ -134,7 +141,7 @@ export default function NewListingPage() {
   const handleSubmit = async (status: 'active' | 'draft') => {
     if (!user || !firestore) return;
     
-    if (!formData.title || !formData.category || !formData.price || !formData.location) {
+    if (!formData.title || !formData.category || !formData.sport || !formData.price || !formData.location) {
       toast({
         variant: 'destructive',
         title: 'Missing Fields',
@@ -158,6 +165,7 @@ export default function NewListingPage() {
         providerId: user.uid,
         title: formData.title,
         category: formData.category,
+        sport: formData.sport,
         description: formData.description,
         price: parseFloat(formData.price) || 0,
         currency: formData.currency,
@@ -183,7 +191,7 @@ export default function NewListingPage() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not save listing. Please try again.',
+        description: 'Could not save listing.',
       });
     }
   };
@@ -217,13 +225,13 @@ export default function NewListingPage() {
           <div className="flex-1 space-y-8">
             <header>
               <h1 className="text-4xl font-headline font-bold mb-2">Create New Service</h1>
-              <p className="text-muted-foreground">Fill in the details below to list your sports service on the Zeedor marketplace.</p>
+              <p className="text-muted-foreground">List your sports service on the Zeedor marketplace.</p>
             </header>
 
             <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
               <CardHeader className="bg-white border-b border-gray-100 p-8">
                 <CardTitle className="text-xl font-headline font-bold">General Information</CardTitle>
-                <CardDescription>Basic details about what you are offering.</CardDescription>
+                <CardDescription>Select the sport and service type.</CardDescription>
               </CardHeader>
               <CardContent className="p-8 space-y-6">
                 <div className="grid gap-2">
@@ -237,18 +245,33 @@ export default function NewListingPage() {
                   />
                 </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="category" className="font-bold">Category *</Label>
-                  <Select onValueChange={(val) => setFormData({ ...formData, category: val })}>
-                    <SelectTrigger className="h-12 rounded-xl">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="sport" className="font-bold">Select Sport *</Label>
+                    <Select onValueChange={(val) => setFormData({ ...formData, sport: val })}>
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="Which sport?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sports.map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="category" className="font-bold">Service Type *</Label>
+                    <Select onValueChange={(val) => setFormData({ ...formData, category: val })}>
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="What type of service?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid gap-2">
@@ -279,7 +302,6 @@ export default function NewListingPage() {
             <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
               <CardHeader className="bg-white border-b border-gray-100 p-8">
                 <CardTitle className="text-xl font-headline font-bold">Media & Photos</CardTitle>
-                <CardDescription>Add visual appeal to your listing.</CardDescription>
               </CardHeader>
               <CardContent className="p-8 space-y-6">
                 <div className="grid gap-4">

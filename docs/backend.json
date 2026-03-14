@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -84,10 +85,11 @@
         },
         "category": {
           "type": "string",
-          "description": "The category under which this listing is classified.",
-          "items": {
-            "type": "string"
-          }
+          "description": "The service category (e.g., Coach, Venue)."
+        },
+        "sport": {
+          "type": "string",
+          "description": "The specific sport this listing pertains to (e.g., Football, Tennis)."
         },
         "location": {
           "type": "string",
@@ -140,6 +142,7 @@
         "title",
         "description",
         "category",
+        "sport",
         "location",
         "price",
         "currency",

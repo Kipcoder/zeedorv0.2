@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { Search, Filter, LayoutGrid, List, Loader2, X, ArrowUpDown } from 'lucide-react';
+import { Search, Filter, LayoutGrid, List, Loader2, X, ArrowUpDown, Trophy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -27,6 +28,11 @@ const CATEGORIES = [
   'Nutritionists', 'Sports Transport', 'Accommodation', 'Repairs'
 ];
 
+const SPORTS = [
+  'Football', 'Basketball', 'Tennis', 'Swimming', 'Yoga', 'Cricket', 
+  'Golf', 'Volleyball', 'Running', 'Cycling', 'Martial Arts', 'Boxing'
+];
+
 export default function ListingsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const firestore = useFirestore();
@@ -34,6 +40,7 @@ export default function ListingsPage() {
   const router = useRouter();
   
   const categoryFilter = searchParams.get('category');
+  const sportFilter = searchParams.get('sport');
   const [searchTerm, setSearchTerm] = useState('');
   const [priceRange, setPriceRange] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
@@ -46,12 +53,16 @@ export default function ListingsPage() {
       where('status', '==', 'active')
     );
 
+    // Note: We avoid complex server-side filtering (where + where) without indexes.
+    // We'll perform one basic filter on server and others in memory for robustness.
     if (categoryFilter) {
       q = query(q, where('category', '==', categoryFilter));
+    } else if (sportFilter) {
+      q = query(q, where('sport', '==', sportFilter));
     }
 
     return q;
-  }, [firestore, categoryFilter]);
+  }, [firestore, categoryFilter, sportFilter]);
 
   const { data: rawListings, isLoading } = useCollection(listingsQuery);
 
@@ -65,17 +76,24 @@ export default function ListingsPage() {
         l.description?.toLowerCase().includes(search) ||
         l.location.toLowerCase().includes(search);
 
-      // 2. Price Range Filter
+      // 2. Cross-filter (if category was used for server query, filter sport in memory and vice-versa)
+      let matchesCategory = true;
+      if (categoryFilter) matchesCategory = l.category === categoryFilter;
+      
+      let matchesSport = true;
+      if (sportFilter) matchesSport = l.sport === sportFilter;
+
+      // 3. Price Range Filter
       let matchesPrice = true;
       const price = parseFloat(l.price) || 0;
       if (priceRange === 'low') matchesPrice = price < 50;
       else if (priceRange === 'mid') matchesPrice = price >= 50 && price <= 150;
       else if (priceRange === 'high') matchesPrice = price > 150;
 
-      return matchesSearch && matchesPrice;
+      return matchesSearch && matchesPrice && matchesCategory && matchesSport;
     })
     .sort((a, b) => {
-      // 3. Sorting Logic
+      // 4. Sorting Logic
       if (sortBy === 'price-low') return (a.price || 0) - (b.price || 0);
       if (sortBy === 'price-high') return (b.price || 0) - (a.price || 0);
       
@@ -93,11 +111,23 @@ export default function ListingsPage() {
   };
 
   const handleCategoryToggle = (cat: string) => {
+    const params = new URLSearchParams(searchParams.toString());
     if (categoryFilter === cat) {
-      router.push('/listings');
+      params.delete('category');
     } else {
-      router.push(`/listings?category=${encodeURIComponent(cat)}`);
+      params.set('category', cat);
     }
+    router.push(`/listings?${params.toString()}`);
+  };
+
+  const handleSportToggle = (sport: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (sportFilter === sport) {
+      params.delete('sport');
+    } else {
+      params.set('sport', sport);
+    }
+    router.push(`/listings?${params.toString()}`);
   };
 
   return (
@@ -115,15 +145,16 @@ export default function ListingsPage() {
               {categoryFilter && (
                 <Badge variant="secondary" className="h-10 px-4 rounded-xl text-sm flex gap-2 items-center bg-primary/10 text-primary border-none">
                   {categoryFilter}
-                  <button onClick={() => router.push('/listings')} className="hover:bg-primary/20 rounded-full p-0.5">
+                  <button onClick={() => handleCategoryToggle(categoryFilter)} className="hover:bg-primary/20 rounded-full p-0.5">
                     <X size={14} />
                   </button>
                 </Badge>
               )}
-              {priceRange !== 'all' && (
-                <Badge variant="secondary" className="h-10 px-4 rounded-xl text-sm flex gap-2 items-center bg-accent/10 text-accent border-none">
-                  {priceRange === 'low' ? 'Under $50' : priceRange === 'mid' ? '$50 - $150' : 'Over $150'}
-                  <button onClick={() => setPriceRange('all')} className="hover:bg-accent/20 rounded-full p-0.5">
+              {sportFilter && (
+                <Badge variant="secondary" className="h-10 px-4 rounded-xl text-sm flex gap-2 items-center bg-emerald-100 text-emerald-700 border-none">
+                  <Trophy size={14} className="mr-1" />
+                  {sportFilter}
+                  <button onClick={() => handleSportToggle(sportFilter)} className="hover:bg-emerald-200 rounded-full p-0.5 ml-1">
                     <X size={14} />
                   </button>
                 </Badge>
@@ -135,8 +166,8 @@ export default function ListingsPage() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <aside className="w-full lg:w-80 flex-shrink-0">
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm sticky top-28">
-              <div className="flex items-center justify-between mb-8">
+            <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm sticky top-28 space-y-8 max-h-[calc(100vh-140px)] overflow-y-auto scrollbar-hide">
+              <div className="flex items-center justify-between">
                 <h3 className="font-bold text-lg flex items-center gap-2">
                   <Filter size={18} /> Filters
                 </h3>
@@ -152,7 +183,34 @@ export default function ListingsPage() {
 
               <div className="space-y-8">
                 <div>
-                  <Label className="text-sm font-bold text-gray-900 mb-4 block uppercase tracking-wider">Categories</Label>
+                  <Label className="text-xs font-bold text-gray-900 mb-4 block uppercase tracking-widest">By Sport</Label>
+                  <div className="space-y-3">
+                    {SPORTS.map(sport => (
+                      <div 
+                        key={sport} 
+                        className="flex items-center space-x-3 cursor-pointer group"
+                        onClick={() => handleSportToggle(sport)}
+                      >
+                        <Checkbox 
+                          id={`sport-${sport}`} 
+                          checked={sportFilter === sport} 
+                          className="rounded-md border-gray-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        />
+                        <label 
+                          htmlFor={`sport-${sport}`} 
+                          className={`text-sm font-medium leading-none cursor-pointer transition-colors ${sportFilter === sport ? 'text-primary font-bold' : 'text-muted-foreground group-hover:text-primary'}`}
+                        >
+                          {sport}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator className="bg-gray-100" />
+
+                <div>
+                  <Label className="text-xs font-bold text-gray-900 mb-4 block uppercase tracking-widest">By Service</Label>
                   <div className="space-y-3">
                     {CATEGORIES.map(cat => (
                       <div 
@@ -179,7 +237,7 @@ export default function ListingsPage() {
                 <Separator className="bg-gray-100" />
 
                 <div>
-                  <Label className="text-sm font-bold text-gray-900 mb-4 block uppercase tracking-wider">Price Range</Label>
+                  <Label className="text-xs font-bold text-gray-900 mb-4 block uppercase tracking-widest">Price Range</Label>
                   <Select value={priceRange} onValueChange={setPriceRange}>
                     <SelectTrigger className="rounded-xl h-12 border-gray-100 bg-gray-50/50">
                       <SelectValue placeholder="All Prices" />
@@ -264,7 +322,7 @@ export default function ListingsPage() {
                     key={listing.id} 
                     id={listing.id}
                     title={listing.title}
-                    category={listing.category}
+                    category={`${listing.sport} ${listing.category}`}
                     price={`${listing.currency} ${listing.price}`}
                     rating={4.8}
                     image={listing.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/400'}

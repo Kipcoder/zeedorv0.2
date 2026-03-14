@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -8,7 +9,6 @@ import {
   Loader2, 
   Plus, 
   X, 
-  Info,
   Save,
   Upload
 } from 'lucide-react';
@@ -39,6 +39,11 @@ const categories = [
   'Nutritionists', 'Sports Transport', 'Accommodation', 'Repairs'
 ];
 
+const sports = [
+  'Football', 'Basketball', 'Tennis', 'Swimming', 'Yoga', 'Cricket', 
+  'Golf', 'Volleyball', 'Running', 'Cycling', 'Martial Arts', 'Boxing'
+];
+
 export default function EditListingPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -57,6 +62,7 @@ export default function EditListingPage() {
   const [formData, setFormData] = useState({
     title: '',
     category: '',
+    sport: '',
     description: '',
     price: '',
     currency: 'USD',
@@ -79,6 +85,7 @@ export default function EditListingPage() {
       setFormData({
         title: listing.title || '',
         category: listing.category || '',
+        sport: listing.sport || '',
         description: listing.description || '',
         price: listing.price?.toString() || '',
         currency: listing.currency || 'USD',
@@ -120,11 +127,11 @@ export default function EditListingPage() {
   };
 
   const handleAiEnhance = async () => {
-    if (!formData.title || !formData.category) {
+    if (!formData.title || !formData.category || !formData.sport) {
       toast({
         variant: 'destructive',
         title: 'Missing information',
-        description: 'Please provide a title and category first.',
+        description: 'Please provide a title, sport, and category first.',
       });
       return;
     }
@@ -133,7 +140,7 @@ export default function EditListingPage() {
     try {
       const result = await generateListingDescription({
         title: formData.title,
-        category: formData.category,
+        category: `${formData.sport} ${formData.category}`,
         keyFeatures: formData.tags.join(', ') || 'Professional sports service',
         targetAudience: 'Athletes and sports enthusiasts',
         existingDescription: formData.description,
@@ -160,7 +167,7 @@ export default function EditListingPage() {
   const handleUpdate = async () => {
     if (!user || !firestore || !docRef) return;
     
-    if (!formData.title || !formData.category || !formData.price || !formData.location) {
+    if (!formData.title || !formData.category || !formData.sport || !formData.price || !formData.location) {
       toast({
         variant: 'destructive',
         title: 'Missing Fields',
@@ -175,6 +182,7 @@ export default function EditListingPage() {
       const updatedData = {
         title: formData.title,
         category: formData.category,
+        sport: formData.sport,
         description: formData.description,
         price: parseFloat(formData.price) || 0,
         currency: formData.currency,
@@ -244,21 +252,39 @@ export default function EditListingPage() {
                   />
                 </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="category" className="font-bold">Category *</Label>
-                  <Select 
-                    value={formData.category} 
-                    onValueChange={(val) => setFormData({ ...formData, category: val })}
-                  >
-                    <SelectTrigger className="h-12 rounded-xl">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="sport" className="font-bold">Sport *</Label>
+                    <Select 
+                      value={formData.sport} 
+                      onValueChange={(val) => setFormData({ ...formData, sport: val })}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="Which sport?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sports.map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="category" className="font-bold">Service Type *</Label>
+                    <Select 
+                      value={formData.category} 
+                      onValueChange={(val) => setFormData({ ...formData, category: val })}
+                    >
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid gap-2">
