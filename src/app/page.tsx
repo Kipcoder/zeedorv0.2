@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -321,8 +320,8 @@ export default function HomePage() {
               <ul className="space-y-4">
                 <li><Link href="#" className="hover:text-primary transition-colors">Help Center</Link></li>
                 <li><Link href="#" className="hover:text-primary transition-colors">Safety Hub</Link></li>
-                <li><Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                <li><Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li><Link href="/terms" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
