@@ -42,9 +42,10 @@ export default function MessagesPage() {
     conversationsMap.get(otherId).push(m);
   });
 
+  // Sort conversations by the most recent message timestamp
   const sortedConversations = Array.from(conversationsMap.entries()).sort((a, b) => {
     const latestA = Math.max(...a[1].map((m: any) => m.sentAt?.seconds || 0));
-    const latestB = Math.max(...b[1].map((m: any) => b.sentAt?.seconds || 0));
+    const latestB = Math.max(...b[1].map((m: any) => m.sentAt?.seconds || 0));
     return latestB - latestA;
   });
 
@@ -94,7 +95,7 @@ export default function MessagesPage() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold truncate text-gray-900">User {otherId.slice(0, 5)}</p>
-                      <p className="text-sm text-muted-foreground truncate">{msgs[msgs.length - 1].content}</p>
+                      <p className="text-sm text-muted-foreground truncate">{msgs[msgs.length - 1]?.content}</p>
                     </div>
                   </button>
                 ))
@@ -127,7 +128,9 @@ export default function MessagesPage() {
                 </div>
                 <ScrollArea className="flex-1 p-4 md:p-6">
                   <div className="space-y-4">
-                    {conversationsMap.get(selectedConversation)?.sort((a:any, b:any) => (a.sentAt?.seconds || 0) - (b.sentAt?.seconds || 0)).map((m: any) => (
+                    {conversationsMap.get(selectedConversation)
+                      ?.sort((a: any, b: any) => (a.sentAt?.seconds || Date.now()) - (b.sentAt?.seconds || Date.now()))
+                      .map((m: any) => (
                       <div key={m.id} className={`flex ${m.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-2xl ${m.senderId === user?.uid ? 'bg-primary text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'}`}>
                           <p className="text-sm">{m.content}</p>
