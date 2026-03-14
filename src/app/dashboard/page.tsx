@@ -11,7 +11,9 @@ import {
   TrendingUp,
   User,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Trash2,
+  Edit3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,15 +23,15 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
-  // Query for user's active listings in the public collection
-  // Removed orderBy to avoid composite index requirements as we sort in memory
   const activeListingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -38,8 +40,6 @@ export default function DashboardPage() {
     );
   }, [firestore, user]);
 
-  // Query for user's private/draft listings
-  // Removed orderBy to avoid composite index requirements
   const privateListingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -50,12 +50,23 @@ export default function DashboardPage() {
   const { data: activeListings, isLoading: loadingActive } = useCollection(activeListingsQuery);
   const { data: privateListings, isLoading: loadingPrivate } = useCollection(privateListingsQuery);
 
-  // Combine and sort in memory to avoid needing Firestore indexes
-  const allListings = [...(activeListings || []), ...(privateListings || [])].sort((a, b) => {
+  const allListings = [
+    ...(activeListings || []).map(l => ({ ...l, _collectionPath: 'listings' })),
+    ...(privateListings || []).map(l => ({ ...l, _collectionPath: `userProfiles/${user?.uid}/providerListings` }))
+  ].sort((a, b) => {
     const dateA = a.createdAt?.seconds || 0;
     const dateB = b.createdAt?.seconds || 0;
     return dateB - dateA;
   });
+
+  const handleDeleteListing = (id: string, path: string) => {
+    if (!firestore || !id) return;
+    
+    if (window.confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
+      const docRef = doc(firestore, path, id);
+      deleteDocumentNonBlocking(docRef);
+    }
+  };
 
   const stats = [
     { label: 'Total Listings', value: allListings.length.toString(), icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100' },
@@ -105,7 +116,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {stats.map((stat, i) => (
             <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow rounded-3xl overflow-hidden">
@@ -164,13 +174,25 @@ export default function DashboardPage() {
                       <div className="flex gap-2">
                         {listing.status === 'active' && (
                           <Link href={`/listings`}>
-                            <Button variant="outline" size="icon" className="rounded-xl">
+                            <Button variant="outline" size="icon" className="rounded-xl" title="View Publicly">
                               <ExternalLink size={18} />
                             </Button>
                           </Link>
                         )}
-                        <Button variant="outline" className="rounded-xl">Edit</Button>
-                        <Button variant="ghost" className="rounded-xl text-destructive hover:bg-destructive/5">Delete</Button>
+                        <Button 
+                          variant="outline" 
+                          className="rounded-xl gap-2"
+                          onClick={() => toast({ title: "Coming Soon", description: "The edit feature is being finalized." })}
+                        >
+                          <Edit3 size={16} /> Edit
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          className="rounded-xl text-destructive hover:bg-destructive/5 gap-2"
+                          onClick={() => handleDeleteListing(listing.id, listing._collectionPath)}
+                        >
+                          <Trash2 size={16} /> Delete
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
