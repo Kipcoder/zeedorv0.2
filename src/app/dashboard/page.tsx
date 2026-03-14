@@ -22,34 +22,35 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   // Query for user's active listings in the public collection
+  // Removed orderBy to avoid composite index requirements as we sort in memory
   const activeListingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'listings'),
-      where('providerId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('providerId', '==', user.uid)
     );
   }, [firestore, user]);
 
   // Query for user's private/draft listings
+  // Removed orderBy to avoid composite index requirements
   const privateListingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
-      collection(firestore, 'userProfiles', user.uid, 'providerListings'),
-      orderBy('createdAt', 'desc')
+      collection(firestore, 'userProfiles', user.uid, 'providerListings')
     );
   }, [firestore, user]);
 
   const { data: activeListings, isLoading: loadingActive } = useCollection(activeListingsQuery);
   const { data: privateListings, isLoading: loadingPrivate } = useCollection(privateListingsQuery);
 
+  // Combine and sort in memory to avoid needing Firestore indexes
   const allListings = [...(activeListings || []), ...(privateListings || [])].sort((a, b) => {
     const dateA = a.createdAt?.seconds || 0;
     const dateB = b.createdAt?.seconds || 0;
