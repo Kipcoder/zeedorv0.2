@@ -1,9 +1,8 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SportSphere | Your Sports Marketplace',
+  title: 'Zeedor | Your Sports Marketplace',
   description: 'Connect with coaches, find venues, buy equipment, and join events in the ultimate sports ecosystem.',
 };
 

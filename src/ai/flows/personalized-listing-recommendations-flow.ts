@@ -55,7 +55,7 @@ const prompt = ai.definePrompt({
   name: 'personalizedListingRecommendationsPrompt',
   input: { schema: PersonalizedListingRecommendationsInputSchema },
   output: { schema: PersonalizedListingRecommendationsOutputSchema },
-  prompt: `You are an AI-powered recommendation engine for SportSphere, a sports marketplace.
+  prompt: `You are an AI-powered recommendation engine for Zeedor, a sports marketplace.
 Your goal is to provide personalized recommendations for coaches, venues, equipment, events, teams, training programs, fitness trainers, physiotherapists, nutritionists, sports transport, accommodation, and repairs, based on the user's profile and recent activity.
 
 Consider the user's sports interests, location, skill level, past bookings, search history, and viewed listings to generate highly relevant suggestions.

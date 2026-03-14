@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const SportSphereCategories = z.enum([
+const ZeedorCategories = z.enum([
   'Coaches',
   'Venues',
   'Equipment',
@@ -36,9 +36,9 @@ export type NaturalLanguageSearchInput = z.infer<
 
 const NaturalLanguageSearchOutputSchema = z.object({
   categories: z
-    .array(SportSphereCategories)
+    .array(ZeedorCategories)
     .describe(
-      'An array of identified SportSphere categories relevant to the query.'
+      'An array of identified Zeedor categories relevant to the query.'
     ),
   location: z
     .string()
@@ -81,10 +81,10 @@ const prompt = ai.definePrompt({
   name: 'naturalLanguageSearchPrompt',
   input: { schema: NaturalLanguageSearchInputSchema },
   output: { schema: NaturalLanguageSearchOutputSchema },
-  prompt: `You are an AI assistant designed to parse natural language queries for sports services on the SportSphere marketplace.
+  prompt: `You are an AI assistant designed to parse natural language queries for sports services on the Zeedor marketplace.
 Your task is to extract relevant information from the user's query and categorize it into a structured JSON object.
 
-Here are the available SportSphere categories:
+Here are the available Zeedor categories:
 - Coaches
 - Venues
 - Equipment
@@ -101,5 +101,22 @@ Here are the available SportSphere categories:
 Prioritize identifying categories first. If multiple categories are implied, list all of them. If no specific category is mentioned, try to infer the most likely one based on context. If no category can be inferred, return an empty array for categories.
 
 Extract the following details:
-- 'categories': An array of one or more identified SportSphere categories. Must be from the list above.
-- 'location': The geographical location mentioned (e.g., 
+- 'categories': An array of one or more identified Zeedor categories. Must be from the list above.
+- 'location': The geographical location mentioned.
+- 'sport': The specific sport.
+- 'ageGroup': The target age group.
+- 'availability': Mentioned availability.
+- 'keywords': Any other relevant terms.`,
+});
+
+const naturalLanguageSearchFlow = ai.defineFlow(
+  {
+    name: 'naturalLanguageSearchFlow',
+    inputSchema: NaturalLanguageSearchInputSchema,
+    outputSchema: NaturalLanguageSearchOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
+    return output!;
+  }
+);

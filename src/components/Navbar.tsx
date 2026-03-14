@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -26,7 +25,7 @@ export default function Navbar() {
             <Dumbbell className="text-white h-6 w-6" />
           </div>
           <span className={`text-2xl font-headline font-bold tracking-tight ${isScrolled ? 'text-gray-900' : 'text-white'}`}>
-            SportSphere
+            Zeedor
           </span>
         </Link>
 
@@ -61,7 +60,7 @@ export default function Navbar() {
             <SheetContent side="right" className="w-[300px] flex flex-col p-8">
               <div className="flex items-center gap-2 mb-10">
                 <Dumbbell className="text-primary h-8 w-8" />
-                <span className="text-2xl font-headline font-bold">SportSphere</span>
+                <span className="text-2xl font-headline font-bold">Zeedor</span>
               </div>
               <div className="flex flex-col gap-6 text-lg font-medium">
                 <Link href="/listings" className="flex items-center gap-3 py-2"><Dumbbell size={20} /> Explore Marketplace</Link>
@@ -71,7 +70,7 @@ export default function Navbar() {
               </div>
               <div className="mt-auto space-y-4">
                 <Button className="w-full h-12 text-lg rounded-xl">Sign In</Button>
-                <Button variant="outline" className="w-full h-12 text-lg rounded-xl">Join SportSphere</Button>
+                <Button variant="outline" className="w-full h-12 text-lg rounded-xl">Join Zeedor</Button>
               </div>
             </SheetContent>
           </Sheet>

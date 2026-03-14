@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview An AI assistant for generating or enhancing listing descriptions for the SportSphere marketplace.
+ * @fileOverview An AI assistant for generating or enhancing listing descriptions for the Zeedor marketplace.
  *
  * - generateListingDescription - A function that generates or enhances a listing description.
  * - GenerateListingDescriptionInput - The input type for the generateListingDescription function.
@@ -53,7 +53,7 @@ const generateListingDescriptionPrompt = ai.definePrompt({
   name: 'generateListingDescriptionPrompt',
   input: {schema: GenerateListingDescriptionInputSchema},
   output: {schema: GenerateListingDescriptionOutputSchema},
-  prompt: `You are an AI assistant specialized in writing compelling and professional listing descriptions for a sports marketplace called "SportSphere". Your goal is to create an engaging description based on the provided details.
+  prompt: `You are an AI assistant specialized in writing compelling and professional listing descriptions for a sports marketplace called "Zeedor". Your goal is to create an engaging description based on the provided details.
 
 Here are the details for the listing:
 
@@ -69,6 +69,8 @@ The user provided key details for a new description.
 
 Key Features: {{{keyFeatures}}}
 Target Audience: {{{targetAudience}}}
+{{#if location}}
+Location: {{{location}}}
 {{#if location}}
 Location: {{{location}}}
 {{/if}}

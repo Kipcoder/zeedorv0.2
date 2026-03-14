@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -183,7 +182,7 @@ export default function HomePage() {
             Are you a sports service provider?
           </h2>
           <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-            Join thousands of coaches, venue owners, and specialists who grow their business with SportSphere.
+            Join thousands of coaches, venue owners, and specialists who grow their business with Zeedor.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button size="lg" variant="secondary" className="rounded-full px-10 h-14 text-lg font-bold">
@@ -204,7 +203,7 @@ export default function HomePage() {
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                 <Dumbbell className="text-white h-6 w-6" />
               </div>
-              <span className="text-2xl font-headline font-bold text-white tracking-tight">SportSphere</span>
+              <span className="text-2xl font-headline font-bold text-white tracking-tight">Zeedor</span>
             </div>
             <p className="mb-6 leading-relaxed">
               Empowering athletes and providers through a unified sports marketplace ecosystem.
@@ -242,7 +241,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="container px-4 mx-auto mt-12 pt-8 border-t border-gray-800 text-center">
-          <p>© 2024 SportSphere Marketplace. All rights reserved.</p>
+          <p>© 2024 Zeedor Marketplace. All rights reserved.</p>
         </div>
       </footer>
     </div>
