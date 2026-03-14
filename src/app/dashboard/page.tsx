@@ -65,6 +65,7 @@ export default function DashboardPage() {
     if (window.confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
       const docRef = doc(firestore, path, id);
       deleteDocumentNonBlocking(docRef);
+      toast({ title: "Listing Deleted", description: "The listing has been removed successfully." });
     }
   };
 
@@ -179,13 +180,14 @@ export default function DashboardPage() {
                             </Button>
                           </Link>
                         )}
-                        <Button 
-                          variant="outline" 
-                          className="rounded-xl gap-2"
-                          onClick={() => toast({ title: "Coming Soon", description: "The edit feature is being finalized." })}
-                        >
-                          <Edit3 size={16} /> Edit
-                        </Button>
+                        <Link href={`/listings/edit/${listing.id}?path=${listing._collectionPath}`}>
+                          <Button 
+                            variant="outline" 
+                            className="rounded-xl gap-2"
+                          >
+                            <Edit3 size={16} /> Edit
+                          </Button>
+                        </Link>
                         <Button 
                           variant="ghost" 
                           className="rounded-xl text-destructive hover:bg-destructive/5 gap-2"
