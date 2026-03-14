@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
   MapPin, 
@@ -12,23 +12,46 @@ import {
   Heart,
   MessageCircle,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { 
+  useFirestore, 
+  useDoc, 
+  useMemoFirebase, 
+  useUser, 
+  addDocumentNonBlocking 
+} from '@/firebase';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ListingDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
   const id = params.id as string;
+
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const docRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -36,6 +59,88 @@ export default function ListingDetailsPage() {
   }, [firestore, id]);
 
   const { data: listing, isLoading, error } = useDoc(docRef);
+
+  const handleBookingRequest = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to book this service.",
+        variant: "destructive"
+      });
+      router.push('/login');
+      return;
+    }
+
+    if (!firestore || !listing) return;
+
+    if (user.uid === listing.providerId) {
+      toast({
+        title: "Action restricted",
+        description: "You cannot book your own service.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    const bookingData = {
+      requesterId: user.uid,
+      providerId: listing.providerId,
+      listingId: id,
+      requestedDateTime: new Date(Date.now() + 86400000).toISOString(), // Default to tomorrow
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    addDocumentNonBlocking(collection(firestore, 'bookingRequests'), bookingData)
+      .then(() => {
+        toast({
+          title: "Booking Requested!",
+          description: "The provider has been notified of your request.",
+        });
+        setIsSubmitting(false);
+      })
+      .catch(() => setIsSubmitting(false));
+  };
+
+  const handleSendMessage = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to contact the provider.",
+        variant: "destructive"
+      });
+      router.push('/login');
+      return;
+    }
+
+    if (!messageText.trim() || !firestore || !listing) return;
+
+    setIsSubmitting(true);
+
+    const messageData = {
+      senderId: user.uid,
+      receiverId: listing.providerId,
+      listingId: id,
+      content: messageText,
+      sentAt: serverTimestamp(),
+      isRead: false,
+    };
+
+    addDocumentNonBlocking(collection(firestore, 'messages'), messageData)
+      .then(() => {
+        toast({
+          title: "Message Sent!",
+          description: "Your inquiry has been delivered.",
+        });
+        setMessageText('');
+        setIsContactModalOpen(false);
+        setIsSubmitting(false);
+      })
+      .catch(() => setIsSubmitting(false));
+  };
 
   if (isLoading) {
     return (
@@ -97,7 +202,7 @@ export default function ListingDetailsPage() {
                   {listing.category}
                 </Badge>
                 <div className="flex items-center text-amber-500 font-bold">
-                  <Star size={18} fill="currentColor" className="mr-1" /> 4.8 (24 Reviews)
+                  < Star size={18} fill="currentColor" className="mr-1" /> 4.8 (24 Reviews)
                 </div>
               </div>
 
@@ -161,10 +266,19 @@ export default function ListingDetailsPage() {
                   </div>
 
                   <div className="grid gap-3">
-                    <Button className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20">
+                    <Button 
+                      className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20"
+                      onClick={handleBookingRequest}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
                       Request Booking
                     </Button>
-                    <Button variant="outline" className="w-full h-14 rounded-2xl text-lg font-bold gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full h-14 rounded-2xl text-lg font-bold gap-2"
+                      onClick={() => setIsContactModalOpen(true)}
+                    >
                       <MessageCircle size={20} />
                       Contact Provider
                     </Button>
@@ -197,6 +311,43 @@ export default function ListingDetailsPage() {
           </aside>
         </div>
       </div>
+
+      {/* Contact Modal */}
+      <Dialog open={isContactModalOpen} onOpenChange={setIsContactModalOpen}>
+        <DialogContent className="rounded-3xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-headline font-bold">Contact Provider</DialogTitle>
+            <DialogDescription>
+              Send a message to inquire about "{listing.title}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea 
+              placeholder="Hi! I'm interested in your service. Can you tell me more about..."
+              className="min-h-[150px] rounded-2xl"
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsContactModalOpen(false)}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!messageText.trim() || isSubmitting}
+              className="rounded-xl gap-2 font-bold"
+            >
+              {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Send size={18} />}
+              Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
