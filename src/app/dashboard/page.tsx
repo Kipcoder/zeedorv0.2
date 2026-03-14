@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
   BarChart3, 
@@ -13,7 +13,9 @@ import {
   Loader2,
   ExternalLink,
   Trash2,
-  Edit3
+  Edit3,
+  Camera,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,7 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useUser, useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +33,13 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [profileData, setProfileData] = useState({
+    displayName: '',
+    bio: '',
+    profilePicture: ''
+  });
 
   const activeListingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -67,6 +76,43 @@ export default function DashboardPage() {
       deleteDocumentNonBlocking(docRef);
       toast({ title: "Listing Deleted", description: "The listing has been removed successfully." });
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit for prototype
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Please select an image smaller than 1MB.'
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileData(prev => ({ ...prev, profilePicture: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    if (!user || !firestore) return;
+    
+    const userRef = doc(firestore, 'userProfiles', user.uid);
+    updateDocumentNonBlocking(userRef, {
+      firstName: profileData.displayName, // Mapping simple UI to schema
+      bio: profileData.bio,
+      profilePictureUrl: profileData.profilePicture || null,
+      updatedAt: new Date().toISOString()
+    });
+
+    toast({
+      title: "Profile Updated",
+      description: "Your changes have been saved successfully."
+    });
   };
 
   const stats = [
@@ -174,7 +220,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex gap-2">
                         {listing.status === 'active' && (
-                          <Link href={`/listings`}>
+                          <Link href={`/listings/${listing.id}`}>
                             <Button variant="outline" size="icon" className="rounded-xl" title="View Publicly">
                               <ExternalLink size={18} />
                             </Button>
@@ -216,13 +262,30 @@ export default function DashboardPage() {
                 <Card className="col-span-1 rounded-3xl border-none shadow-sm bg-white overflow-hidden">
                    <div className="h-32 bg-primary relative">
                       <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-4 border-white overflow-hidden bg-gray-200 flex items-center justify-center">
-                         <User size={40} className="text-gray-400" />
+                         {profileData.profilePicture || user?.photoURL ? (
+                           <Image src={profileData.profilePicture || user?.photoURL!} alt="Profile" fill className="object-cover" />
+                         ) : (
+                           <User size={40} className="text-gray-400" />
+                         )}
                       </div>
                    </div>
                    <CardContent className="pt-16 pb-8 text-center">
                       <h4 className="font-headline font-bold text-xl">{user?.displayName || 'Sports Provider'}</h4>
                       <p className="text-muted-foreground mb-6">{user?.email}</p>
-                      <Button variant="outline" className="w-full rounded-xl">Update Photo</Button>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleImageUpload} 
+                        accept="image/*" 
+                        className="hidden" 
+                      />
+                      <Button 
+                        variant="outline" 
+                        className="w-full rounded-xl gap-2"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Camera size={16} /> Update Photo
+                      </Button>
                    </CardContent>
                 </Card>
                 
@@ -231,7 +294,12 @@ export default function DashboardPage() {
                    <div className="grid gap-6">
                       <div className="grid gap-2">
                          <Label className="font-bold">Display Name</Label>
-                         <Input defaultValue={user?.displayName || ''} className="rounded-xl h-12" />
+                         <Input 
+                           value={profileData.displayName} 
+                           onChange={e => setProfileData(p => ({...p, displayName: e.target.value}))} 
+                           placeholder={user?.displayName || 'Your Name'}
+                           className="rounded-xl h-12" 
+                         />
                       </div>
                       <div className="grid gap-2">
                          <Label className="font-bold">Email Address</Label>
@@ -239,11 +307,16 @@ export default function DashboardPage() {
                       </div>
                       <div className="grid gap-2">
                          <Label className="font-bold">Bio</Label>
-                         <textarea className="flex min-h-[120px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="Tell the community about yourself..."></textarea>
+                         <textarea 
+                           className="flex min-h-[120px] w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" 
+                           placeholder="Tell the community about yourself..."
+                           value={profileData.bio}
+                           onChange={e => setProfileData(p => ({...p, bio: e.target.value}))}
+                         ></textarea>
                       </div>
                       <div className="flex justify-end gap-4 mt-4">
                          <Button variant="ghost" className="rounded-xl px-8 h-12 font-bold">Discard</Button>
-                         <Button className="rounded-xl px-8 h-12 font-bold">Save Changes</Button>
+                         <Button className="rounded-xl px-8 h-12 font-bold" onClick={handleSaveProfile}>Save Changes</Button>
                       </div>
                    </div>
                 </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
   Sparkles, 
@@ -9,7 +9,9 @@ import {
   Plus, 
   X, 
   Info,
-  CheckCircle2
+  CheckCircle2,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { generateListingDescription } from '@/ai/flows/listing-description-assistant-flow';
@@ -42,6 +45,7 @@ export default function NewListingPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [loading, setLoading] = useState(false);
   const [aiEnhancing, setAiEnhancing] = useState(false);
@@ -54,6 +58,7 @@ export default function NewListingPage() {
     currency: 'USD',
     location: '',
     tags: [] as string[],
+    image: '',
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -67,6 +72,25 @@ export default function NewListingPage() {
 
   const removeTag = (tagToRemove: string) => {
     setFormData({ ...formData, tags: formData.tags.filter(t => t !== tagToRemove) });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Please select an image smaller than 1MB.'
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAiEnhance = async () => {
@@ -122,7 +146,6 @@ export default function NewListingPage() {
     setLoading(true);
 
     try {
-      // Choose collection based on status
       const collectionPath = status === 'active' 
         ? 'listings' 
         : `userProfiles/${user.uid}/providerListings`;
@@ -143,7 +166,7 @@ export default function NewListingPage() {
         status: status,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        imageUrls: [`https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/400`],
+        imageUrls: [formData.image || `https://picsum.photos/seed/${Math.floor(Math.random() * 1000)}/600/400`],
       };
 
       setDocumentNonBlocking(newDocRef, listingData, { merge: true });
@@ -255,8 +278,40 @@ export default function NewListingPage() {
 
             <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
               <CardHeader className="bg-white border-b border-gray-100 p-8">
+                <CardTitle className="text-xl font-headline font-bold">Media & Photos</CardTitle>
+                <CardDescription>Add visual appeal to your listing.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <div className="grid gap-4">
+                  <Label className="font-bold">Listing Image</Label>
+                  <div 
+                    className="relative aspect-video rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {formData.image ? (
+                      <Image src={formData.image} alt="Preview" fill className="object-cover" />
+                    ) : (
+                      <div className="text-center p-8">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <p className="text-sm font-medium text-gray-600">Click to upload image</p>
+                        <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 1MB</p>
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleImageUpload} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
+              <CardHeader className="bg-white border-b border-gray-100 p-8">
                 <CardTitle className="text-xl font-headline font-bold">Pricing & Location</CardTitle>
-                <CardDescription>How much and where is this service available?</CardDescription>
               </CardHeader>
               <CardContent className="p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -333,27 +388,6 @@ export default function NewListingPage() {
               </Button>
             </div>
           </div>
-
-          <aside className="w-full md:w-80 space-y-6">
-            <Card className="rounded-3xl border-none shadow-sm bg-primary text-white p-8">
-              <Sparkles className="mb-4 h-8 w-8 text-blue-200" />
-              <h3 className="text-xl font-headline font-bold mb-4">Pro Provider Tips</h3>
-              <ul className="space-y-4 text-sm text-blue-50">
-                <li className="flex gap-2">
-                  <div className="h-5 w-5 rounded-full bg-blue-400/30 flex items-center justify-center flex-shrink-0">1</div>
-                  <p>Use high-quality photos to increase bookings by up to 40%.</p>
-                </li>
-                <li className="flex gap-2">
-                  <div className="h-5 w-5 rounded-full bg-blue-400/30 flex items-center justify-center flex-shrink-0">2</div>
-                  <p>Be specific about your availability and any equipment provided.</p>
-                </li>
-                <li className="flex gap-2">
-                  <div className="h-5 w-5 rounded-full bg-blue-400/30 flex items-center justify-center flex-shrink-0">3</div>
-                  <p>Use our <b>AI Assist</b> tool to generate professional, SEO-friendly descriptions.</p>
-                </li>
-              </ul>
-            </Card>
-          </aside>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
   Sparkles, 
@@ -9,7 +9,8 @@ import {
   Plus, 
   X, 
   Info,
-  Save
+  Save,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useFirestore, useUser, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { generateListingDescription } from '@/ai/flows/listing-description-assistant-flow';
@@ -44,6 +46,7 @@ export default function EditListingPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const id = params.id as string;
   const path = searchParams.get('path');
@@ -59,11 +62,11 @@ export default function EditListingPage() {
     currency: 'USD',
     location: '',
     tags: [] as string[],
+    image: '',
   });
 
   const [tagInput, setTagInput] = useState('');
 
-  // Fetch the existing document
   const docRef = useMemoFirebase(() => {
     if (!firestore || !id || !path) return null;
     return doc(firestore, path, id);
@@ -71,7 +74,6 @@ export default function EditListingPage() {
 
   const { data: listing, isLoading: isFetching } = useDoc(docRef);
 
-  // Sync listing data to form
   useEffect(() => {
     if (listing) {
       setFormData({
@@ -82,6 +84,7 @@ export default function EditListingPage() {
         currency: listing.currency || 'USD',
         location: listing.location || '',
         tags: listing.tags || [],
+        image: listing.imageUrls?.[0] || '',
       });
     }
   }, [listing]);
@@ -95,6 +98,25 @@ export default function EditListingPage() {
 
   const removeTag = (tagToRemove: string) => {
     setFormData({ ...formData, tags: formData.tags.filter(t => t !== tagToRemove) });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Please select an image smaller than 1MB.'
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAiEnhance = async () => {
@@ -158,6 +180,7 @@ export default function EditListingPage() {
         currency: formData.currency,
         location: formData.location,
         tags: formData.tags,
+        imageUrls: [formData.image],
         updatedAt: serverTimestamp(),
       };
 
@@ -184,20 +207,6 @@ export default function EditListingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-primary" size={48} />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="max-w-md w-full p-8 text-center rounded-3xl border-none shadow-xl">
-           <Info className="mx-auto h-12 w-12 text-primary mb-4" />
-           <h2 className="text-2xl font-headline font-bold mb-2">Sign In Required</h2>
-           <Link href="/login">
-             <Button className="w-full h-12 rounded-xl font-bold">Sign In Now</Button>
-           </Link>
-        </Card>
       </div>
     );
   }
@@ -272,6 +281,37 @@ export default function EditListingPage() {
                     className="min-h-[200px] rounded-xl"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
+              <CardHeader className="bg-white border-b border-gray-100 p-8">
+                <CardTitle className="text-xl font-headline font-bold">Listing Media</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-6">
+                <div className="grid gap-4">
+                  <Label className="font-bold">Cover Photo</Label>
+                  <div 
+                    className="relative aspect-video rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors overflow-hidden"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {formData.image ? (
+                      <Image src={formData.image} alt="Preview" fill className="object-cover" />
+                    ) : (
+                      <div className="text-center p-8">
+                        <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <p className="text-sm font-medium text-gray-600">Change image</p>
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleImageUpload} 
+                    accept="image/*" 
+                    className="hidden" 
                   />
                 </div>
               </CardContent>
