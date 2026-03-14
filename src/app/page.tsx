@@ -22,7 +22,8 @@ import {
   Target,
   Activity,
   Zap,
-  ChevronRight
+  ChevronRight,
+  ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ import RecommendationSection from '@/components/RecommendationSection';
 const categories = [
   { name: 'Coaches', icon: UserCircle, color: 'bg-blue-100 text-blue-600' },
   { name: 'Venues', icon: MapPin, color: 'bg-green-100 text-green-600' },
-  { name: 'Equipment', icon: Dumbbell, color: 'bg-orange-100 text-orange-600' },
+  { name: 'Equipment', icon: ShoppingBag, color: 'bg-orange-100 text-orange-600' },
   { name: 'Events', icon: Calendar, color: 'bg-purple-100 text-purple-600' },
   { name: 'Teams', icon: Users, color: 'bg-cyan-100 text-cyan-600' },
   { name: 'Training Programs', icon: TrendingUp, color: 'bg-pink-100 text-pink-600' },
@@ -47,14 +48,14 @@ const sportHubs = [
     icon: Trophy, 
     color: 'bg-emerald-500', 
     image: 'https://picsum.photos/seed/football/600/400',
-    links: ['Coaches', 'Venues', 'Teams']
+    links: ['Coaches', 'Venues', 'Equipment']
   },
   { 
     name: 'Tennis', 
     icon: Activity, 
     color: 'bg-yellow-500', 
     image: 'https://picsum.photos/seed/tennis/600/400',
-    links: ['Coaches', 'Venues', 'Training Programs']
+    links: ['Coaches', 'Venues', 'Equipment']
   },
   { 
     name: 'Basketball', 
@@ -76,13 +77,13 @@ const featuredListings = [
     location: 'Central Park Courts',
   },
   {
-    id: '2',
-    title: 'Modern Soccer Stadium Rental',
-    category: 'Football Venues',
-    price: '$120/session',
-    rating: 4.8,
-    image: 'https://picsum.photos/seed/32/600/400',
-    location: 'Westside Sports Complex',
+    id: 'equip-1',
+    title: 'Pro-Grade Soccer Training Kit',
+    category: 'Football Equipment',
+    price: '$149.99',
+    rating: 4.9,
+    image: 'https://picsum.photos/seed/43/600/400',
+    location: 'Zeedor Warehouse (Shipping Available)',
   },
   {
     id: '3',
@@ -221,8 +222,8 @@ export default function HomePage() {
                 <Activity size={18} />
                 <span>Browse All Services</span>
               </div>
-            <h2 className="text-4xl font-headline font-bold mb-3">Professional Services</h2>
-            <p className="text-muted-foreground text-lg">Expert help across every sporting category</p>
+            <h2 className="text-4xl font-headline font-bold mb-3">Professional Services & Gear</h2>
+            <p className="text-muted-foreground text-lg">Expert help and elite equipment across every sporting category</p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
@@ -238,8 +239,8 @@ export default function HomePage() {
         <div className="container px-4 mx-auto">
           <div className="flex justify-between items-end mb-12">
             <div>
-              <h2 className="text-4xl font-headline font-bold mb-3">Top-Rated Providers</h2>
-              <p className="text-muted-foreground text-lg">The most popular services currently on the marketplace</p>
+              <h2 className="text-4xl font-headline font-bold mb-3">Top-Rated Providers & Equipment</h2>
+              <p className="text-muted-foreground text-lg">The most popular services and gear currently on the marketplace</p>
             </div>
             <Link href="/listings">
               <Button className="rounded-full px-8 h-12 font-bold">Explore All</Button>
@@ -262,7 +263,7 @@ export default function HomePage() {
             Built by Athletes, <br className="hidden md:block" /> For Athletes.
           </h2>
           <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed opacity-80">
-            Whether you're a weekend warrior or a professional, Zeedor connects you with the elite services you need to succeed.
+            Whether you're a weekend warrior or a professional, Zeedor connects you with the elite services and quality gear you need to succeed.
           </p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link href="/listings/new">
@@ -301,7 +302,7 @@ export default function HomePage() {
                 <li><Link href="/listings" className="hover:text-primary transition-colors">Find a Coach</Link></li>
                 <li><Link href="/listings" className="hover:text-primary transition-colors">Book a Venue</Link></li>
                 <li><Link href="/listings" className="hover:text-primary transition-colors">Join a Team</Link></li>
-                <li><Link href="/listings" className="hover:text-primary transition-colors">Sports Equipment</Link></li>
+                <li><Link href="/listings?category=Equipment" className="hover:text-primary transition-colors">Sports Equipment</Link></li>
               </ul>
             </div>
 
