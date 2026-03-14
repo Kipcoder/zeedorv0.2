@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { Search, Filter, SlidersHorizontal, MapPin, Calendar, LayoutGrid, List } from 'lucide-react';
+import { Search, Filter, MapPin, LayoutGrid, List, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,18 +16,23 @@ import ListingCard from '@/components/ListingCard';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-
-const dummyListings = [
-  { id: '1', title: 'Elite Tennis Coaching', category: 'Coaches', price: '$60/hr', rating: 4.9, image: 'https://picsum.photos/seed/21/600/400', location: 'New York, NY' },
-  { id: '2', title: 'Soccer Field Rental', category: 'Venues', price: '$120/hr', rating: 4.8, image: 'https://picsum.photos/seed/32/600/400', location: 'Brooklyn, NY' },
-  { id: '3', title: 'Basketball Pro Gear', category: 'Equipment', price: '$45/day', rating: 4.7, image: 'https://picsum.photos/seed/43/600/400', location: 'Queens, NY' },
-  { id: '4', title: 'Triathlon Training', category: 'Training Programs', price: '$150/mo', rating: 5.0, image: 'https://picsum.photos/seed/65/600/400', location: 'Jersey City, NJ' },
-  { id: '5', title: 'Sports Physical Therapy', category: 'Physiotherapists', price: '$90/session', rating: 4.9, image: 'https://picsum.photos/seed/76/600/400', location: 'Manhattan, NY' },
-  { id: '6', title: 'Running Club Event', category: 'Events', price: 'Free', rating: 4.6, image: 'https://picsum.photos/seed/54/600/400', location: 'Central Park, NY' },
-];
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 export default function ListingsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const firestore = useFirestore();
+
+  const listingsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'listings'),
+      where('status', '==', 'active'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore]);
+
+  const { data: listings, isLoading } = useCollection(listingsQuery);
 
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
@@ -81,22 +85,6 @@ export default function ListingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <Separator />
-
-                <div>
-                  <Label className="text-sm font-bold text-gray-900 mb-4 block">Rating</Label>
-                  <div className="space-y-3">
-                    {[5, 4, 3].map(star => (
-                      <div key={star} className="flex items-center space-x-2">
-                        <Checkbox id={`star-${star}`} />
-                        <label htmlFor={`star-${star}`} className="text-sm font-medium leading-none">
-                          {star} Stars & Up
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
               
               <Button className="w-full mt-10 rounded-xl h-12 text-base font-bold">Apply Filters</Button>
@@ -115,53 +103,52 @@ export default function ListingsPage() {
               <div className="flex items-center gap-4">
                 <div className="flex bg-gray-100 p-1 rounded-xl">
                   <Button 
-                    variant={viewMode === 'grid' ? 'white' : 'ghost'} 
+                    variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
                     size="icon" 
-                    className={`h-10 w-10 rounded-lg ${viewMode === 'grid' ? 'shadow-sm' : ''}`}
+                    className={`h-10 w-10 rounded-lg ${viewMode === 'grid' ? 'bg-white shadow-sm' : ''}`}
                     onClick={() => setViewMode('grid')}
                   >
                     <LayoutGrid size={18} />
                   </Button>
                   <Button 
-                    variant={viewMode === 'list' ? 'white' : 'ghost'} 
+                    variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
                     size="icon" 
-                    className={`h-10 w-10 rounded-lg ${viewMode === 'list' ? 'shadow-sm' : ''}`}
+                    className={`h-10 w-10 rounded-lg ${viewMode === 'list' ? 'bg-white shadow-sm' : ''}`}
                     onClick={() => setViewMode('list')}
                   >
                     <List size={18} />
                   </Button>
                 </div>
-                <Select defaultValue="newest">
-                  <SelectTrigger className="w-[160px] h-12 rounded-2xl">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="newest">Newest First</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="rating">Top Rated</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
             {/* Listings Grid */}
-            <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-              {dummyListings.map((listing) => (
-                <ListingCard key={listing.id} {...listing} />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="mt-16 flex justify-center items-center gap-4">
-              <Button variant="outline" disabled className="rounded-xl px-6 h-12 font-bold">Previous</Button>
-              <div className="flex gap-2">
-                <Button variant="secondary" className="rounded-xl w-12 h-12 font-bold">1</Button>
-                <Button variant="ghost" className="rounded-xl w-12 h-12 font-bold">2</Button>
-                <Button variant="ghost" className="rounded-xl w-12 h-12 font-bold">3</Button>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="animate-spin text-primary mb-4" size={32} />
+                <p className="text-muted-foreground">Loading listings...</p>
               </div>
-              <Button variant="outline" className="rounded-xl px-6 h-12 font-bold border-primary text-primary">Next</Button>
-            </div>
+            ) : listings && listings.length > 0 ? (
+              <div className={`grid gap-8 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                {listings.map((listing) => (
+                  <ListingCard 
+                    key={listing.id} 
+                    id={listing.id}
+                    title={listing.title}
+                    category={listing.category}
+                    price={`${listing.currency} ${listing.price}`}
+                    rating={4.8} // Rating system can be implemented later
+                    image={listing.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/400'}
+                    location={listing.location}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-gray-50 rounded-3xl">
+                <p className="text-xl font-bold text-gray-400">No listings found.</p>
+                <p className="text-muted-foreground">Try adjusting your filters or search keywords.</p>
+              </div>
+            )}
           </main>
         </div>
       </div>

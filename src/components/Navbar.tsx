@@ -2,12 +2,16 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Dumbbell, Menu, X, User, MessageSquare, PlusCircle } from 'lucide-react';
+import { Dumbbell, Menu, User, MessageSquare, PlusCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user } = useUser();
+  const auth = useAuth();
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +20,10 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleSignOut = () => {
+    signOut(auth);
+  };
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5'}`}>
@@ -32,21 +40,29 @@ export default function Navbar() {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           <Link href="/listings" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Explore</Link>
-          <Link href="/messages" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Messages</Link>
-          <Link href="/dashboard" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Dashboard</Link>
-          <div className="h-6 w-px bg-gray-300/30 mx-2"></div>
-          <Link href="/listings/new">
-            <Button variant="ghost" className={`gap-2 ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>
-              <PlusCircle size={18} />
-              List Service
-            </Button>
-          </Link>
-          <Link href="/profile">
-            <Button className="rounded-full px-6 bg-accent hover:bg-accent/90">
-              <User size={18} className="mr-2" />
-              Sign In
-            </Button>
-          </Link>
+          {user && (
+            <>
+              <Link href="/messages" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Messages</Link>
+              <Link href="/dashboard" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Dashboard</Link>
+              <Link href="/listings/new">
+                <Button variant="ghost" className={`gap-2 ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>
+                  <PlusCircle size={18} />
+                  List Service
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" onClick={handleSignOut} className={isScrolled ? 'text-gray-600' : 'text-white/90'}>
+                <LogOut size={18} />
+              </Button>
+            </>
+          )}
+          {!user && (
+            <Link href="/login">
+              <Button className="rounded-full px-6 bg-accent hover:bg-accent/90">
+                <User size={18} className="mr-2" />
+                Sign In
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Mobile Nav */}
@@ -64,13 +80,15 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col gap-6 text-lg font-medium">
                 <Link href="/listings" className="flex items-center gap-3 py-2"><Dumbbell size={20} /> Explore Marketplace</Link>
-                <Link href="/messages" className="flex items-center gap-3 py-2"><MessageSquare size={20} /> Messages</Link>
-                <Link href="/dashboard" className="flex items-center gap-3 py-2"><PlusCircle size={20} /> My Listings</Link>
-                <Link href="/profile" className="flex items-center gap-3 py-2"><User size={20} /> User Profile</Link>
-              </div>
-              <div className="mt-auto space-y-4">
-                <Button className="w-full h-12 text-lg rounded-xl">Sign In</Button>
-                <Button variant="outline" className="w-full h-12 text-lg rounded-xl">Join Zeedor</Button>
+                {user ? (
+                  <>
+                    <Link href="/messages" className="flex items-center gap-3 py-2"><MessageSquare size={20} /> Messages</Link>
+                    <Link href="/dashboard" className="flex items-center gap-3 py-2"><PlusCircle size={20} /> Dashboard</Link>
+                    <button onClick={handleSignOut} className="flex items-center gap-3 py-2 text-destructive"><LogOut size={20} /> Sign Out</button>
+                  </>
+                ) : (
+                  <Link href="/login" className="flex items-center gap-3 py-2"><User size={20} /> Sign In</Link>
+                )}
               </div>
             </SheetContent>
           </Sheet>
