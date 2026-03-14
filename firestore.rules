@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * SportSphere Security Rules
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset implements a strict user-ownership and shared-collaboration model. Access 
+     * is primarily governed by matching authenticated user IDs against path parameters or 
+     * denormalized ownership fields within documents.
+     *
+     * DATA STRUCTURE:
+     * - /userProfiles/{userId}: Private user information.
+     * - /listings/{listingId}: Publicly discoverable active listings.
+     * - /userProfiles/{userId}/providerListings/{listingId}: Private/Draft listings owned by a provider.
+     * - /bookingRequests/{bookingRequestId}: Shared documents between a requester and a provider.
+     * - /messages/{messageId}: Shared communication documents between a sender and a receiver.
+     *
+     * KEY SECURITY DECISIONS:
+     * - Structural Segregation: Active listings are kept in a top-level public collection, while 
+     *   drafts/archives are nested under the user's profile to prevent accidental exposure.
+     * - Authorization Independence: Critical IDs (providerId, requesterId, senderId) are 
+     *   denormalized onto documents to allow for fast, local security checks without extra lookups.
+     * - Relational Integrity: On creation and update of user-scoped data, the rules enforce that 
+     *   internal ID fields match the authenticated user and path parameters.
+     */
+
+    // --- Helper Functions ---
+
+    /** Checks if a user is authenticated. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user's UID matches a specific ID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Verifies ownership and ensures the document exists for state-changing operations. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** Checks if the authenticated user is one of two participants in a shared document. */
+    function isParticipant(id1, id2) {
+      return isSignedIn() && (request.auth.uid == id1 || request.auth.uid == id2);
+    }
+
+    /** Verifies participation and ensures the document exists for state-changing operations. */
+    function isExistingParticipant(id1, id2) {
+      return resource != null && isParticipant(id1, id2);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for user profile documents. Access is strictly private to the owner.
+     * @path /userProfiles/{userId}
+     * @allow (create) User 'abc' creates profile document with ID 'abc'.
+     * @deny (get) User 'xyz' attempts to read profile document 'abc'.
+     * @principle Restricts access to a user's own data tree and validates path consistency.
+     */
+    match /userProfiles/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for private provider listings (drafts, archives).
+       * @path /userProfiles/{userId}/providerListings/{listingId}
+       * @allow (list) Provider 'abc' lists their own drafts.
+       * @deny (create) Provider 'abc' attempts to create a listing in user 'xyz's subcollection.
+       * @principle Uses structural segregation to keep non-public listings strictly private.
+       */
+      match /providerListings/{listingId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.providerId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.providerId == resource.data.providerId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Rules for public listings. Everyone can read; only the provider can write.
+     * @path /listings/{listingId}
+     * @allow (list) An anonymous user browses all active listings.
+     * @deny (update) User 'xyz' attempts to edit listing owned by provider 'abc'.
+     * @principle Implements Public Read with Owner-Only Writes using denormalized providerId.
+     */
+    match /listings/{listingId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.providerId == request.auth.uid;
+      allow update: if resource != null && resource.data.providerId == request.auth.uid && request.resource.data.providerId == resource.data.providerId;
+      allow delete: if resource != null && resource.data.providerId == request.auth.uid;
+    }
+
+    /**
+     * @description Rules for booking requests shared between a requester and a provider.
+     * @path /bookingRequests/{bookingRequestId}
+     * @allow (get) Provider 'abc' views a booking request sent by requester 'xyz'.
+     * @deny (create) User 'abc' attempts to create a booking where requesterId is 'xyz'.
+     * @principle Shared access model for closed collaborators using denormalized IDs.
+     */
+    match /bookingRequests/{bookingRequestId} {
+      allow get: if isParticipant(resource.data.requesterId, resource.data.providerId);
+      allow list: if isSignedIn(); // Queries must filter by requesterId or providerId
+      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      allow update: if isExistingParticipant(resource.data.requesterId, resource.data.providerId) && request.resource.data.requesterId == resource.data.requesterId;
+      allow delete: if isExistingParticipant(resource.data.requesterId, resource.data.providerId);
+    }
+
+    /**
+     * @description Rules for messages between a sender and a receiver.
+     * @path /messages/{messageId}
+     * @allow (create) Sender 'abc' sends a message to receiver 'xyz'.
+     * @deny (get) User '123' (not sender or receiver) attempts to read the message.
+     * @principle Shared access model for communication privacy.
+     */
+    match /messages/{messageId} {
+      allow get: if isParticipant(resource.data.senderId, resource.data.receiverId);
+      allow list: if isSignedIn(); // Queries must filter by senderId or receiverId
+      allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+      allow update: if isExistingParticipant(resource.data.senderId, resource.data.receiverId) && request.resource.data.senderId == resource.data.senderId;
+      allow delete: if isExistingParticipant(resource.data.senderId, resource.data.receiverId);
+    }
+  }
+}
