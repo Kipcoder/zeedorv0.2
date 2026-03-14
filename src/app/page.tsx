@@ -122,9 +122,11 @@ export default function HomePage() {
                 className="border-none shadow-none focus-visible:ring-0 text-gray-800"
               />
             </div>
-            <Button size="lg" className="rounded-xl px-8 font-semibold text-base">
-              Explore Now
-            </Button>
+            <Link href="/listings">
+              <Button size="lg" className="rounded-xl px-8 font-semibold text-base w-full md:w-auto">
+                Explore Now
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -137,9 +139,11 @@ export default function HomePage() {
               <h2 className="text-3xl font-headline font-bold mb-2">Browse by Category</h2>
               <p className="text-muted-foreground">Everything you need for your sporting journey</p>
             </div>
-            <Button variant="ghost" className="hidden md:flex gap-2">
-              View all categories <ArrowRight size={16} />
-            </Button>
+            <Link href="/listings">
+              <Button variant="ghost" className="hidden md:flex gap-2">
+                View all categories <ArrowRight size={16} />
+              </Button>
+            </Link>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
@@ -185,9 +189,11 @@ export default function HomePage() {
             Join thousands of coaches, venue owners, and specialists who grow their business with Zeedor.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button size="lg" variant="secondary" className="rounded-full px-10 h-14 text-lg font-bold">
-              List Your Service
-            </Button>
+            <Link href="/listings/new">
+              <Button size="lg" variant="secondary" className="rounded-full px-10 h-14 text-lg font-bold">
+                List Your Service
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-lg font-bold bg-transparent text-white border-white hover:bg-white/10">
               Learn More
             </Button>
@@ -213,10 +219,10 @@ export default function HomePage() {
           <div>
             <h4 className="text-white font-bold mb-6">Marketplace</h4>
             <ul className="space-y-4">
-              <li><Link href="#" className="hover:text-primary transition-colors">Find a Coach</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Book a Venue</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Join a Team</Link></li>
-              <li><Link href="#" className="hover:text-primary transition-colors">Sports Equipment</Link></li>
+              <li><Link href="/listings" className="hover:text-primary transition-colors">Find a Coach</Link></li>
+              <li><Link href="/listings" className="hover:text-primary transition-colors">Book a Venue</Link></li>
+              <li><Link href="/listings" className="hover:text-primary transition-colors">Join a Team</Link></li>
+              <li><Link href="/listings" className="hover:text-primary transition-colors">Sports Equipment</Link></li>
             </ul>
           </div>
 
