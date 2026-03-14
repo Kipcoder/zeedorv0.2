@@ -250,6 +250,24 @@
         "sentAt",
         "isRead"
       ]
+    },
+    "Article": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Article",
+      "type": "object",
+      "description": "Represents a sports insight, news article, or training tip published on the platform.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "content": { "type": "string" },
+        "authorName": { "type": "string" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "publishedAt": { "type": "string", "format": "date-time" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "title", "excerpt", "content", "authorName", "category", "publishedAt"]
     }
   },
   "auth": {
@@ -288,6 +306,22 @@
             {
               "name": "listingId",
               "description": "The unique ID of the listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/articles/{articleId}",
+        "definition": {
+          "entityName": "Article",
+          "schema": {
+            "$ref": "#/backend/entities/Article"
+          },
+          "description": "Publicly accessible sports articles and insights.",
+          "params": [
+            {
+              "name": "articleId",
+              "description": "The unique ID of the article."
             }
           ]
         }

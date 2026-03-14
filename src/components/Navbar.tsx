@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Dumbbell, Menu, User, MessageSquare, PlusCircle, LogOut } from 'lucide-react';
+import { Dumbbell, Menu, User, MessageSquare, PlusCircle, LogOut, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useUser, useAuth } from '@/firebase';
@@ -40,6 +41,7 @@ export default function Navbar() {
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           <Link href="/listings" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Explore</Link>
+          <Link href="/articles" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Insights</Link>
           {user && (
             <>
               <Link href="/messages" className={`font-medium hover:text-primary transition-colors ${isScrolled ? 'text-gray-600' : 'text-white/90'}`}>Messages</Link>
@@ -80,6 +82,7 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col gap-6 text-lg font-medium">
                 <Link href="/listings" className="flex items-center gap-3 py-2"><Dumbbell size={20} /> Explore Marketplace</Link>
+                <Link href="/articles" className="flex items-center gap-3 py-2"><BookOpen size={20} /> Insights</Link>
                 {user ? (
                   <>
                     <Link href="/messages" className="flex items-center gap-3 py-2"><MessageSquare size={20} /> Messages</Link>

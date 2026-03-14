@@ -8,6 +8,24 @@
       "imageHint": "sports athlete"
     },
     {
+      "id": "article-nutrition",
+      "description": "Sports nutrition and healthy food",
+      "imageUrl": "https://picsum.photos/seed/nutri/600/400",
+      "imageHint": "healthy food sports"
+    },
+    {
+      "id": "article-training",
+      "description": "High intensity training session",
+      "imageUrl": "https://picsum.photos/seed/train/600/400",
+      "imageHint": "gym training"
+    },
+    {
+      "id": "article-mental",
+      "description": "Athlete focusing before a game",
+      "imageUrl": "https://picsum.photos/seed/mind/600/400",
+      "imageHint": "mental focus athlete"
+    },
+    {
       "id": "coach-tennis",
       "description": "Tennis coach instructing",
       "imageUrl": "https://picsum.photos/seed/21/600/400",
@@ -24,24 +42,6 @@
       "description": "Soccer training equipment",
       "imageUrl": "https://picsum.photos/seed/43/600/400",
       "imageHint": "soccer equipment"
-    },
-    {
-      "id": "event-marathon",
-      "description": "Marathon event start",
-      "imageUrl": "https://picsum.photos/seed/54/600/400",
-      "imageHint": "marathon race"
-    },
-    {
-      "id": "gym-trainer",
-      "description": "Fitness trainer in gym",
-      "imageUrl": "https://picsum.photos/seed/65/600/400",
-      "imageHint": "fitness trainer"
-    },
-    {
-      "id": "physio-session",
-      "description": "Physiotherapist working with athlete",
-      "imageUrl": "https://picsum.photos/seed/76/600/400",
-      "imageHint": "physiotherapist athlete"
     }
   ]
 }

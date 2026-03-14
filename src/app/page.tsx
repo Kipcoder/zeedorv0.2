@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,21 +9,15 @@ import {
   Users, 
   Dumbbell, 
   TrendingUp, 
-  HeartPulse, 
-  Stethoscope, 
-  Apple, 
-  Bus, 
-  Bed, 
-  Wrench, 
   UserCircle,
-  Sparkles,
   ArrowRight,
   Trophy,
   Target,
   Activity,
-  Zap,
   ChevronRight,
-  ShoppingBag
+  ShoppingBag,
+  BookOpen,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +26,7 @@ import Navbar from '@/components/Navbar';
 import CategoryCard from '@/components/CategoryCard';
 import ListingCard from '@/components/ListingCard';
 import RecommendationSection from '@/components/RecommendationSection';
+import ArticleCard from '@/components/ArticleCard';
 
 const categories = [
   { name: 'Coaches', icon: UserCircle, color: 'bg-blue-100 text-blue-600' },
@@ -102,6 +98,36 @@ const featuredListings = [
     image: 'https://picsum.photos/seed/65/600/400',
     location: 'Downtown Gym',
   },
+];
+
+const latestArticles = [
+  {
+    id: 'art-1',
+    title: 'Top 10 Recovery Tips for Marathon Runners',
+    excerpt: 'Recovery is just as important as the run itself. Learn the best strategies to bounce back after your big race...',
+    category: 'Training',
+    author: 'Sarah Jenkins',
+    date: new Date().toISOString(),
+    image: 'https://picsum.photos/seed/train/600/400'
+  },
+  {
+    id: 'art-2',
+    title: 'The Ultimate Guide to Sports Nutrition',
+    excerpt: 'Fueling your body correctly can be the difference between a podium finish and a DNF. We break down the macros...',
+    category: 'Nutrition',
+    author: 'Dr. Mike Ross',
+    date: new Date(Date.now() - 86400000).toISOString(),
+    image: 'https://picsum.photos/seed/nutri/600/400'
+  },
+  {
+    id: 'art-3',
+    title: 'Mental Toughness: Winning the Game in Your Head',
+    excerpt: 'Sports are 90% mental. Discover how elite athletes prepare their minds for high-pressure competition situations...',
+    category: 'Mindset',
+    author: 'Coach Carter',
+    date: new Date(Date.now() - 172800000).toISOString(),
+    image: 'https://picsum.photos/seed/mind/600/400'
+  }
 ];
 
 export default function HomePage() {
@@ -213,6 +239,33 @@ export default function HomePage() {
       {/* AI Recommendations */}
       <RecommendationSection />
 
+      {/* Articles Section */}
+      <section className="py-24 bg-white">
+        <div className="container px-4 mx-auto">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+              <div className="flex items-center gap-2 text-primary font-bold mb-3 uppercase tracking-widest text-sm">
+                <BookOpen size={18} />
+                <span>Expert Advice</span>
+              </div>
+              <h2 className="text-4xl font-headline font-bold mb-3">Sports Insights & News</h2>
+              <p className="text-muted-foreground text-lg">Level up your game with professional tips and training guides.</p>
+            </div>
+            <Link href="/articles">
+              <Button variant="outline" className="rounded-full font-bold group">
+                View All <ArrowRight size={18} className="ml-1 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {latestArticles.map((article) => (
+              <ArticleCard key={article.id} {...article} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Service Categories Section */}
       <section className="py-24 bg-gray-50/50">
         <div className="container px-4 mx-auto">
@@ -300,7 +353,7 @@ export default function HomePage() {
               <ul className="space-y-4">
                 <li><Link href="/listings" className="hover:text-primary transition-colors">Find a Coach</Link></li>
                 <li><Link href="/listings" className="hover:text-primary transition-colors">Book a Venue</Link></li>
-                <li><Link href="/listings" className="hover:text-primary transition-colors">Join a Team</Link></li>
+                <li><Link href="/articles" className="hover:text-primary transition-colors">Sports Insights</Link></li>
                 <li><Link href="/listings?category=Equipment" className="hover:text-primary transition-colors">Sports Equipment</Link></li>
               </ul>
             </div>
