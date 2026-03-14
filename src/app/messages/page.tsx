@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, or } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Send, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,28 +20,23 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
 
-  // Fetch all messages where user is sender or receiver
+  // Fetch messages where user is either sender OR receiver for a complete inbox
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'messages'),
-      where('senderId', 'in', [user.uid, 'placeholder']), // Using 'in' to handle multiple participants
+      or(
+        where('senderId', '==', user.uid),
+        where('receiverId', '==', user.uid)
+      )
     );
   }, [firestore, user]);
 
-  // For this prototype, we'll fetch all and filter client-side to simplify security rules
-  const allMessagesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'messages'));
-  }, [firestore, user]);
+  const { data: messages, isLoading } = useCollection(messagesQuery);
 
-  const { data: messages, isLoading } = useCollection(allMessagesQuery);
-
-  const myMessages = (messages || []).filter(m => m.senderId === user?.uid || m.receiverId === user?.uid);
-  
   // Group messages into conversations
   const conversationsMap = new Map();
-  myMessages.forEach(m => {
+  (messages || []).forEach(m => {
     const otherId = m.senderId === user?.uid ? m.receiverId : m.senderId;
     if (!conversationsMap.has(otherId)) conversationsMap.set(otherId, []);
     conversationsMap.get(otherId).push(m);

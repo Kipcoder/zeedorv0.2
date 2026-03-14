@@ -13,7 +13,8 @@ import {
   MessageCircle,
   ShieldCheck,
   CheckCircle2,
-  Send
+  Send,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -118,6 +119,16 @@ export default function ListingDetailsPage() {
 
     if (!messageText.trim() || !firestore || !listing) return;
 
+    if (user.uid === listing.providerId) {
+      toast({
+        title: "Action restricted",
+        description: "You cannot message yourself.",
+        variant: "destructive"
+      });
+      setIsContactModalOpen(false);
+      return;
+    }
+
     setIsSubmitting(true);
 
     const messageData = {
@@ -161,6 +172,8 @@ export default function ListingDetailsPage() {
       </div>
     );
   }
+
+  const isOwner = user?.uid === listing.providerId;
 
   return (
     <div className="min-h-screen bg-gray-50/50 pt-24 pb-20">
@@ -248,45 +261,60 @@ export default function ListingDetailsPage() {
                     <span className="text-muted-foreground ml-2">per session</span>
                   </div>
 
-                  <div className="space-y-4 mb-8">
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl">
-                      <Calendar className="text-primary" size={20} />
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">Next Available</p>
-                        <p className="text-xs text-muted-foreground">Tomorrow at 10:00 AM</p>
-                      </div>
+                  {isOwner ? (
+                    <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100 mb-4 text-center">
+                      <Sparkles className="mx-auto text-primary mb-3" size={32} />
+                      <p className="text-blue-900 font-bold mb-1">This is your listing</p>
+                      <p className="text-blue-700 text-sm mb-4">Manage your services and view requests from your dashboard.</p>
+                      <Link href="/dashboard">
+                        <Button variant="outline" className="w-full rounded-xl border-primary text-primary hover:bg-primary/5 font-bold">
+                          Go to Dashboard
+                        </Button>
+                      </Link>
                     </div>
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl">
-                      <ShieldCheck className="text-green-600" size={20} />
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">Zeedor Protected</p>
-                        <p className="text-xs text-muted-foreground">Secure payments & verified pros</p>
+                  ) : (
+                    <>
+                      <div className="space-y-4 mb-8">
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl">
+                          <Calendar className="text-primary" size={20} />
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Next Available</p>
+                            <p className="text-xs text-muted-foreground">Tomorrow at 10:00 AM</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl">
+                          <ShieldCheck className="text-green-600" size={20} />
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Zeedor Protected</p>
+                            <p className="text-xs text-muted-foreground">Secure payments & verified pros</p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="grid gap-3">
-                    <Button 
-                      className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20"
-                      onClick={handleBookingRequest}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
-                      Request Booking
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full h-14 rounded-2xl text-lg font-bold gap-2"
-                      onClick={() => setIsContactModalOpen(true)}
-                    >
-                      <MessageCircle size={20} />
-                      Contact Provider
-                    </Button>
-                  </div>
-                  
-                  <p className="text-center text-xs text-muted-foreground mt-6">
-                    No charge until the provider accepts your request.
-                  </p>
+                      <div className="grid gap-3">
+                        <Button 
+                          className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20"
+                          onClick={handleBookingRequest}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
+                          Request Booking
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full h-14 rounded-2xl text-lg font-bold gap-2"
+                          onClick={() => setIsContactModalOpen(true)}
+                        >
+                          <MessageCircle size={20} />
+                          Contact Provider
+                        </Button>
+                      </div>
+                      
+                      <p className="text-center text-xs text-muted-foreground mt-6">
+                        No charge until the provider accepts your request.
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
