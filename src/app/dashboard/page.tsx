@@ -17,7 +17,8 @@ import {
   Camera,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  IdCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -166,33 +167,37 @@ export default function DashboardPage() {
         </div>
 
         <Tabs defaultValue="listings" className="space-y-8">
-          <TabsList className="bg-white border p-1 rounded-2xl h-14 gap-2">
-            <TabsTrigger value="listings" className="rounded-xl px-8 h-12 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">My Listings</TabsTrigger>
-            <TabsTrigger value="bookings" className="rounded-xl px-8 h-12 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">Bookings</TabsTrigger>
-            <TabsTrigger value="profile" className="rounded-xl px-8 h-12 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">Profile</TabsTrigger>
+          <TabsList className="bg-white border p-1 rounded-2xl h-14 gap-2 flex-wrap sm:flex-nowrap">
+            <TabsTrigger value="listings" className="flex-1 rounded-xl px-4 sm:px-8 h-12 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">Listings</TabsTrigger>
+            <TabsTrigger value="bookings" className="flex-1 rounded-xl px-4 sm:px-8 h-12 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">Bookings</TabsTrigger>
+            <TabsTrigger value="profile" className="flex-1 rounded-xl px-4 sm:px-8 h-12 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">Profile</TabsTrigger>
           </TabsList>
 
           <TabsContent value="listings" className="space-y-6">
-            {allListings.map((listing) => (
+            {allListings.length > 0 ? allListings.map((listing) => (
               <Card key={listing.id} className="border-none shadow-sm overflow-hidden rounded-3xl bg-white">
                 <CardContent className="p-6 flex flex-col md:flex-row gap-6 items-center">
-                  <div className="relative w-full md:w-32 h-32 rounded-2xl overflow-hidden">
+                  <div className="relative w-full md:w-32 h-32 rounded-2xl overflow-hidden shrink-0">
                     <Image src={listing.imageUrls?.[0] || 'https://picsum.photos/seed/placeholder/600/400'} alt={listing.title} fill className="object-cover" />
                   </div>
-                  <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                      <h3 className="text-xl font-headline font-bold">{listing.title}</h3>
+                  <div className="flex-1 text-center md:text-left min-w-0">
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
+                      <h3 className="text-xl font-headline font-bold truncate">{listing.title}</h3>
                       <Badge variant={listing.status === 'active' ? 'default' : 'secondary'} className="rounded-full">{listing.status}</Badge>
                     </div>
                     <p className="text-primary font-bold">{listing.currency} {listing.price}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <Link href={`/listings/edit/${listing.id}?path=${listing._collectionPath}`}><Button variant="outline" className="rounded-xl"><Edit3 size={16} className="mr-2" /> Edit</Button></Link>
+                  <div className="flex gap-2 shrink-0">
+                    <Link href={`/listings/edit/${listing.id}?path=${listing._collectionPath}`}><Button variant="outline" className="rounded-xl"><Edit3 size={16} className="mr-1" /> Edit</Button></Link>
                     <Button variant="ghost" className="rounded-xl text-destructive" onClick={() => handleDeleteListing(listing.id, listing._collectionPath)}><Trash2 size={16} /></Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                <p className="text-muted-foreground">You haven't created any listings yet.</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="bookings" className="space-y-12">
@@ -200,29 +205,37 @@ export default function DashboardPage() {
             <section>
               <h3 className="text-2xl font-headline font-bold mb-6">Received Requests</h3>
               <div className="grid gap-4">
-                {receivedBookings?.map((booking) => (
+                {(receivedBookings || []).length > 0 ? receivedBookings?.map((booking) => (
                   <Card key={booking.id} className="border-none shadow-sm rounded-3xl bg-white">
-                    <CardContent className="p-6 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-blue-50 p-3 rounded-2xl text-blue-600"><CalendarIcon size={24} /></div>
-                        <div>
-                          <p className="font-bold">Request ID: {booking.id.slice(0, 8)}</p>
-                          <p className="text-sm text-muted-foreground">{new Date(booking.requestedDateTime).toLocaleString()}</p>
+                    <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="bg-blue-50 p-3 rounded-2xl text-blue-600 shrink-0"><CalendarIcon size={24} /></div>
+                        <div className="min-w-0">
+                          <p className="font-bold flex items-center gap-2">
+                            From: User {booking.requesterId.slice(0, 8)}
+                            <IdCard size={14} className="text-gray-400" />
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">Listing ID: {booking.listingId.slice(0, 8)}</p>
+                          <p className="text-xs text-gray-400">{new Date(booking.requestedDateTime).toLocaleString()}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                         {booking.status === 'pending' ? (
                           <>
-                            <Button variant="outline" className="rounded-xl text-green-600 border-green-200" onClick={() => handleBookingStatus(booking.id, 'accepted')}><CheckCircle size={16} className="mr-2" /> Accept</Button>
+                            <Button variant="outline" className="rounded-xl text-green-600 border-green-200 flex-1 sm:flex-none" onClick={() => handleBookingStatus(booking.id, 'accepted')}><CheckCircle size={16} className="mr-2" /> Accept</Button>
                             <Button variant="ghost" className="rounded-xl text-destructive" onClick={() => handleBookingStatus(booking.id, 'rejected')}><XCircle size={16} /></Button>
                           </>
                         ) : (
-                          <Badge className="rounded-full capitalize">{booking.status}</Badge>
+                          <Badge className="rounded-full capitalize px-4 py-1">{booking.status}</Badge>
                         )}
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                )) : (
+                  <div className="text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                    <p className="text-muted-foreground text-sm">No requests received yet.</p>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -230,19 +243,24 @@ export default function DashboardPage() {
             <section>
               <h3 className="text-2xl font-headline font-bold mb-6">My Bookings</h3>
               <div className="grid gap-4">
-                {sentBookings?.map((booking) => (
+                {(sentBookings || []).length > 0 ? sentBookings?.map((booking) => (
                   <Card key={booking.id} className="border-none shadow-sm rounded-3xl bg-white">
                     <CardContent className="p-6 flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="bg-purple-50 p-3 rounded-2xl text-purple-600"><Clock size={24} /></div>
+                        <div className="bg-purple-50 p-3 rounded-2xl text-purple-600 shrink-0"><Clock size={24} /></div>
                         <div>
-                          <p className="font-bold">Service for {new Date(booking.requestedDateTime).toLocaleDateString()}</p>
-                          <p className="text-sm text-muted-foreground">Status: <span className="capitalize font-medium">{booking.status}</span></p>
+                          <p className="font-bold">Service with Provider {booking.providerId.slice(0, 8)}</p>
+                          <p className="text-sm text-muted-foreground">Requested: {new Date(booking.requestedDateTime).toLocaleDateString()}</p>
                         </div>
                       </div>
+                      <Badge className="rounded-full capitalize">{booking.status}</Badge>
                     </CardContent>
                   </Card>
-                ))}
+                )) : (
+                  <div className="text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                    <p className="text-muted-foreground text-sm">You haven't made any bookings yet.</p>
+                  </div>
+                )}
               </div>
             </section>
           </TabsContent>

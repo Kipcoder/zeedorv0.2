@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Send, MessageSquare } from 'lucide-react';
+import { Loader2, Send, MessageSquare, ArrowLeft, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MessagesPage() {
@@ -44,7 +44,7 @@ export default function MessagesPage() {
 
   const sortedConversations = Array.from(conversationsMap.entries()).sort((a, b) => {
     const latestA = Math.max(...a[1].map((m: any) => m.sentAt?.seconds || 0));
-    const latestB = Math.max(...b[1].map((m: any) => m.sentAt?.seconds || 0));
+    const latestB = Math.max(...b[1].map((m: any) => b.sentAt?.seconds || 0));
     return latestB - latestA;
   });
 
@@ -76,8 +76,8 @@ export default function MessagesPage() {
       <div className="container px-4 mx-auto max-w-6xl h-[calc(100vh-140px)]">
         <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden h-full flex">
           
-          {/* Sidebar */}
-          <div className="w-full md:w-80 border-r border-gray-100 flex flex-col">
+          {/* Sidebar - Hidden on mobile if a conversation is selected */}
+          <div className={`w-full md:w-80 border-r border-gray-100 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
             <div className="p-6 border-b border-gray-100">
               <h2 className="text-2xl font-headline font-bold">Messages</h2>
             </div>
@@ -107,21 +107,29 @@ export default function MessagesPage() {
             </ScrollArea>
           </div>
 
-          {/* Chat Area */}
-          <div className="hidden md:flex flex-1 flex-col bg-white">
+          {/* Chat Area - Visible on mobile if selected, otherwise hidden */}
+          <div className={`flex-1 flex-col bg-white ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
             {selectedConversation ? (
               <>
-                <div className="p-6 border-b border-gray-100 flex items-center gap-4">
+                <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-4">
+                  <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedConversation(null)}>
+                    <ArrowLeft size={20} />
+                  </Button>
                   <Avatar>
-                    <AvatarFallback className="bg-primary/10 text-primary">U</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      <User size={20} />
+                    </AvatarFallback>
                   </Avatar>
-                  <h3 className="font-bold">Conversation with User {selectedConversation.slice(0, 5)}</h3>
+                  <div>
+                    <h3 className="font-bold leading-tight">User {selectedConversation.slice(0, 8)}</h3>
+                    <p className="text-xs text-muted-foreground">Active Conversation</p>
+                  </div>
                 </div>
-                <ScrollArea className="flex-1 p-6">
+                <ScrollArea className="flex-1 p-4 md:p-6">
                   <div className="space-y-4">
                     {conversationsMap.get(selectedConversation)?.sort((a:any, b:any) => (a.sentAt?.seconds || 0) - (b.sentAt?.seconds || 0)).map((m: any) => (
                       <div key={m.id} className={`flex ${m.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[70%] p-4 rounded-2xl ${m.senderId === user?.uid ? 'bg-primary text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'}`}>
+                        <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-2xl ${m.senderId === user?.uid ? 'bg-primary text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'}`}>
                           <p className="text-sm">{m.content}</p>
                           <p className={`text-[10px] mt-1 opacity-60 ${m.senderId === user?.uid ? 'text-right' : 'text-left'}`}>
                             {m.sentAt ? new Date(m.sentAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...'}
@@ -131,7 +139,7 @@ export default function MessagesPage() {
                     ))}
                   </div>
                 </ScrollArea>
-                <div className="p-6 border-t border-gray-100 flex gap-4">
+                <div className="p-4 md:p-6 border-t border-gray-100 flex gap-2 md:gap-4">
                   <Input 
                     placeholder="Type a message..." 
                     className="rounded-xl h-12"
@@ -139,7 +147,7 @@ export default function MessagesPage() {
                     onChange={(e) => setReplyText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendReply()}
                   />
-                  <Button onClick={handleSendReply} className="rounded-xl h-12 px-6"><Send size={18} /></Button>
+                  <Button onClick={handleSendReply} className="rounded-xl h-12 px-6" disabled={!replyText.trim()}><Send size={18} /></Button>
                 </div>
               </>
             ) : (
