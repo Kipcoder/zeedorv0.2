@@ -1,7 +1,6 @@
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Calendar, User, ArrowRight, Clock } from 'lucide-react';
@@ -19,6 +18,13 @@ interface ArticleCardProps {
 }
 
 export default function ArticleCard({ id, title, excerpt, category, author, date, image }: ArticleCardProps) {
+  const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    // defer date formatting until after hydration to avoid mismatches
+    setFormattedDate(new Date(date).toLocaleDateString());
+  }, [date]);
+
   return (
     <Card className="group overflow-hidden border-none shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col h-full bg-white rounded-[40px] border border-gray-100/50">
       <div className="relative h-64 overflow-hidden">
@@ -39,7 +45,7 @@ export default function ArticleCard({ id, title, excerpt, category, author, date
         <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
           <div className="flex items-center gap-1.5">
             <Calendar size={14} className="text-primary/60" />
-            <span>{new Date(date).toLocaleDateString()}</span>
+            <span>{formattedDate || '...'}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Clock size={14} className="text-primary/60" />

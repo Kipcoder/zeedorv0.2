@@ -1,7 +1,6 @@
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { ArrowLeft, Calendar, User, Share2, Bookmark, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ export default function ArticleDetailPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const id = params.id as string;
+  const [formattedDate, setFormattedDate] = useState<string | null>(null);
 
   const docRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -26,11 +26,10 @@ export default function ArticleDetailPage() {
   const { data: article, isLoading } = useDoc(docRef);
 
   // Mock data for initial presentation if not in DB
-  // Use static date strings to prevent hydration mismatch errors
   const mockArticles: Record<string, any> = {
     'art-1': {
       title: 'Top 10 Recovery Tips for Marathon Runners',
-      content: 'Recovery is the often-overlooked secret weapon of elite runners. After a grueling 26.2 miles, your body is in a state of high stress. Inflammation is peaking, glycogen stores are depleted, and micro-tears in muscle fiber need urgent repair.\n\nFirst, prioritize hydration with electrolytes. Water alone is not enough to replace what you lost. Second, focus on high-quality protein within the first 60 minutes to kickstart muscle repair. Third, dont underestimate the power of sleep—this is when your growth hormones peak.\n\nLastly, gentle movement like walking or swimming in the days following the race can actually speed up recovery by increasing blood flow without the impact of running.',
+      content: 'Recovery is the often-overlooked secret weapon of elite runners. After a grueling 26.2 miles, your body is in a state of high stress. Inflammation is peaking, glycogen stores are depleted, and micro-tears in muscle fiber need urgent repair.\n\nFirst, prioritize hydration with electrolytes. Water alone is not enough to replace what you lost. Second, focus on high-quality protein within the first 60 minutes to kickstart muscle repair. Third, dont underestimate the power of sleep—this is when your growth hormones peak.\n\nLastly, gentle movement like walking or swimming in the days following the race can actually speed up recovery by increasing flow without the impact of running.',
       category: 'Training',
       authorName: 'Sarah Jenkins',
       publishedAt: '2024-05-20T10:00:00.000Z',
@@ -47,6 +46,12 @@ export default function ArticleDetailPage() {
   };
 
   const activeArticle = article || mockArticles[id];
+
+  useEffect(() => {
+    if (activeArticle?.publishedAt) {
+      setFormattedDate(new Date(activeArticle.publishedAt).toLocaleDateString());
+    }
+  }, [activeArticle]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" size={48} /></div>;
@@ -87,7 +92,7 @@ export default function ArticleDetailPage() {
               <div>
                 <p className="font-bold text-gray-900">{activeArticle.authorName}</p>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(activeArticle.publishedAt).toLocaleDateString()}</span>
+                  <span className="flex items-center gap-1"><Calendar size={14} /> {formattedDate || '...'}</span>
                   <span className="flex items-center gap-1"><Clock size={14} /> 6 min read</span>
                 </div>
               </div>
@@ -108,20 +113,3 @@ export default function ArticleDetailPage() {
             className="object-cover"
           />
         </div>
-
-        <div className="prose prose-blue max-w-none text-gray-700 text-xl leading-relaxed whitespace-pre-wrap">
-          {activeArticle.content}
-        </div>
-
-        <div className="mt-20 p-10 bg-gray-50 rounded-[40px] text-center">
-          <h3 className="text-2xl font-headline font-bold mb-4">Want more insights like this?</h3>
-          <p className="text-muted-foreground mb-8">Join the Zeedor newsletter to get weekly training tips and gear reviews delivered to your inbox.</p>
-          <div className="flex max-w-md mx-auto gap-3">
-             <input type="email" placeholder="Enter your email" className="flex-1 rounded-2xl border px-4 h-14" />
-             <Button className="rounded-2xl px-8 h-14 font-bold">Subscribe</Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
