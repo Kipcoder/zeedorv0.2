@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Brand Colors derived from guidelines: Primary #1755CF, Background #F2F5F8, Accent #824EDE */
+    /* Brand Colors: Primary #1755CF (hsl 220 80% 45%), Background #F2F5F8 (hsl 210 24% 96%), Accent #824EDE (hsl 262 69% 59%) */
     --background: 210 24% 96%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;

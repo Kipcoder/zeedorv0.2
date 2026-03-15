@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Calendar, User, ArrowRight, Clock } from 'lucide-react';
+import { Calendar, ArrowRight, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 
@@ -21,8 +21,10 @@ export default function ArticleCard({ id, title, excerpt, category, author, date
   const [formattedDate, setFormattedDate] = useState<string | null>(null);
 
   useEffect(() => {
-    // defer date formatting until after hydration to avoid mismatches
-    setFormattedDate(new Date(date).toLocaleDateString());
+    // Defer date formatting until after hydration to avoid mismatches
+    if (date) {
+      setFormattedDate(new Date(date).toLocaleDateString());
+    }
   }, [date]);
 
   return (

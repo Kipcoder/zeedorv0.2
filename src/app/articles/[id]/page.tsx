@@ -87,7 +87,7 @@ export default function ArticleDetailPage() {
           <div className="flex flex-wrap items-center justify-between gap-6 border-y border-gray-100 py-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-primary font-bold">
-                {activeArticle.authorName.charAt(0)}
+                {activeArticle.authorName?.charAt(0) || 'A'}
               </div>
               <div>
                 <p className="font-bold text-gray-900">{activeArticle.authorName}</p>
@@ -113,3 +113,20 @@ export default function ArticleDetailPage() {
             className="object-cover"
           />
         </div>
+
+        <div className="prose prose-blue max-w-none text-gray-700 text-xl leading-relaxed whitespace-pre-wrap">
+          {activeArticle.content}
+        </div>
+
+        <div className="mt-20 p-10 bg-gray-50 rounded-[40px] text-center">
+          <h3 className="text-2xl font-headline font-bold mb-4">Want more insights like this?</h3>
+          <p className="text-muted-foreground mb-8">Join the Zeedor newsletter to get weekly training tips and gear reviews delivered to your inbox.</p>
+          <div className="flex max-w-md mx-auto gap-3">
+             <input type="email" placeholder="Enter your email" className="flex-1 rounded-2xl border px-4 h-14" />
+             <Button className="rounded-2xl px-8 h-14 font-bold">Subscribe</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
