@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { 
   BarChart3, 
@@ -37,6 +37,11 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isClient, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    setIsScrolled(true);
+  }, []);
   
   const [profileData, setProfileData] = useState({
     displayName: '',
@@ -222,7 +227,9 @@ export default function DashboardPage() {
                             <IdCard size={14} className="text-gray-400" />
                           </p>
                           <p className="text-sm text-muted-foreground truncate">Listing ID: {booking.listingId.slice(0, 8)}</p>
-                          <p className="text-xs text-gray-400 font-medium">{new Date(booking.requestedDateTime).toLocaleString()}</p>
+                          <p className="text-xs text-gray-400 font-medium">
+                            {isClient ? new Date(booking.requestedDateTime).toLocaleString() : 'Loading...'}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -260,7 +267,9 @@ export default function DashboardPage() {
                         <div className="bg-purple-50 p-3 rounded-2xl text-purple-600 shrink-0"><Clock size={24} /></div>
                         <div>
                           <p className="font-bold">Service with Provider {booking.providerId.slice(0, 8)}</p>
-                          <p className="text-sm text-muted-foreground font-medium">Requested: {new Date(booking.requestedDateTime).toLocaleDateString()}</p>
+                          <p className="text-sm text-muted-foreground font-medium">
+                            Requested: {isClient ? new Date(booking.requestedDateTime).toLocaleDateString() : '...'}
+                          </p>
                         </div>
                       </div>
                       <Badge className="rounded-full capitalize px-6 py-1.5 font-bold bg-gray-100 text-gray-700">{booking.status}</Badge>
